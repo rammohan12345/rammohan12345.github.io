@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Tutor Ram - AZ-900: Azure Fundamentals</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js"></script>
+<style>body{margin:0;padding:0;background:#0a0e1a}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+
+
+const COURSE = {
+  title: "AZ-900: Azure Fundamentals", icon: "☁️", color: "#0078D4",
+  desc: "Your gateway into Azure — cloud concepts, core services, security, governance, and pricing.",
+  roles: ["Junior Cloud Admin","Cloud Support Associate","Azure Help Desk Engineer","Cloud Operations Analyst","Pre-Sales Cloud Consultant","Cloud Migration Analyst","IT Infrastructure Analyst"],
+  resume: [
+    "Understanding of cloud computing: IaaS/PaaS/SaaS/serverless, shared responsibility, deployment models",
+    "Knowledge of Azure compute: VMs (B/D/E/F/N series), App Service, Functions, AKS, Scale Sets, AVD",
+    "Proficient in Azure networking: VNets, VPN Gateway, ExpressRoute, Load Balancer, App Gateway, Front Door, Bastion",
+    "Azure storage expertise: Blob tiers (Hot/Cool/Archive), Files, Table, Queue with LRS/ZRS/GRS replication",
+    "Database services: Azure SQL, Cosmos DB (global NoSQL <10ms), MySQL/PostgreSQL, Redis Cache",
+    "Azure identity and governance: Azure AD, MFA, Conditional Access, RBAC, Policy, Management Groups, Blueprints",
+    "Security: Key Vault, Defender for Cloud, DDoS Protection, Firewall, Azure Monitor, Log Analytics",
+    "Cost management: Pricing Calculator, TCO Calculator, Reserved Instances, Spot VMs, Azure Advisor"
+  ],
+  interview: [
+    {q:"Explain cloud computing to a non-technical executive.",a:"Instead of buying and maintaining our own servers — which costs $50,000+ upfront, takes weeks to set up, and requires dedicated IT staff — we rent computing power from Microsoft Azure. We pay monthly for exactly what we use, like an electricity bill. If we need more capacity for a product launch, we scale up in minutes. When demand drops, we scale back down and stop paying.\n\nThe key benefits: we shift from a large upfront capital expense to a predictable monthly operational expense, we get access to Microsoft's global network of data centers across 60+ regions, and Microsoft handles all hardware maintenance, physical security, and infrastructure — they invest over $1 billion per year in security alone. This lets our IT team focus on projects that drive business value instead of maintaining servers."},
+    {q:"When would you choose IaaS vs PaaS vs SaaS?",a:"IaaS (Virtual Machines) when we need full OS control — typically for legacy applications that can't be modified, like a 15-year-old Windows app. We manage the OS, patches, and application. Quick lift-and-shift path.\n\nPaaS (App Service, Azure SQL) for new application development. The platform manages the OS, runtime, and middleware. Developers just deploy code. Auto-scaling, deployment slots for zero-downtime, managed certificates — dramatically reduces operational burden.\n\nSaaS (Microsoft 365, Dynamics) when we need standard business tools. Everything is managed by the provider. We just use the software and manage our data and access.\n\nServerless (Azure Functions) for event-driven workloads — file processing, scheduled tasks, API backends. Pay only per execution, scales to zero when idle."},
+    {q:"How would you design a highly available application on Azure?",a:"I'd deploy across multiple Availability Zones within a region for 99.99% SLA — these are physically separate buildings with independent power and networking. For disaster recovery, I'd use Azure's paired regions (East US ↔ West US) with Azure Site Recovery for automated failover.\n\nThe architecture: Azure Front Door as the global entry point with CDN and WAF, distributing traffic to Application Gateways in each region. Behind that, VM Scale Sets auto-scale based on demand. Azure SQL with geo-replication for the database layer. Blob storage with GRS (geo-redundant storage) for static content.\n\nFor monitoring: Azure Monitor with alerts, Application Insights for APM, and Azure Service Health for platform issues."},
+    {q:"How do you optimize Azure costs?",a:"I follow a structured approach:\n\n1. Right-size VMs using Azure Advisor recommendations — many VMs run at 5-10% CPU utilization\n2. Reserved Instances (1 or 3 year) for steady production workloads — saves up to 72%\n3. Spot VMs for fault-tolerant batch processing — saves up to 90%\n4. Auto-shutdown for dev/test VMs at night and weekends\n5. Blob storage lifecycle policies — auto-move data from Hot to Cool after 30 days, Archive after 180 days\n6. Azure Hybrid Benefit — bring existing Windows Server and SQL Server licenses for up to 85% savings\n7. Tags for cost allocation — CostCenter, Owner, Environment tags on every resource\n8. Budget alerts at 80% and 100% thresholds\n\nA real example: I reduced a $50K/month Azure bill to $17K by implementing Reserved Instances, right-sizing 40 VMs, and adding lifecycle policies to 20TB of blob storage."}
+  ]
+};
+
+const L = [
+{mod:"Cloud Concepts",id:"az900-1",title:"Cloud Computing Fundamentals",
+content:`Cloud computing is the delivery of computing services — servers, storage, databases, networking, software, analytics, and intelligence — over the internet ("the cloud") on a pay-as-you-go basis.
+
+**Why Cloud Exists — The Electricity Analogy:**
+Before power grids, every factory built its own generator. Expensive, wasteful, and required dedicated engineers. When utilities appeared, factories plugged into the grid and paid for what they used. Cloud computing does the same for IT.
+
+**The Five NIST Characteristics:**
+
+**1. On-Demand Self-Service:** Provision resources through a web portal in minutes — no phone calls, no purchase orders, no hardware procurement. Need a database? Three clicks. Need it gone? One click.
+
+**2. Broad Network Access:** Access resources from any device with internet. Work from office, home, airport, or beach. Your applications and data are available everywhere.
+
+**3. Resource Pooling:** Multiple customers share the same physical infrastructure but are completely isolated (multi-tenancy). Like apartments in a building — shared structure, private spaces. This sharing enables economies of scale that make cloud affordable.
+
+**4. Rapid Elasticity:** Scale up or down instantly. An e-commerce site running 2 servers normally can scale to 200 servers during Black Friday, then back to 2 on Monday. You only pay for what you use during each period.
+
+**5. Measured Service:** Usage is tracked and billed like a utility. Used 100 compute hours? Pay for 100. Stored 500 GB? Pay for 500 GB. No capacity wasted sitting idle.
+
+**Cloud Benefits:**
+
+**High Availability (HA):** Cloud providers run multiple redundant systems. If one server fails, another takes over automatically. Azure guarantees 99.99% uptime with Availability Zones — that's less than 53 minutes of downtime per year.
+
+**Scalability:** Vertical scaling = make a server bigger (more CPU/RAM). Horizontal scaling = add more servers. Cloud makes both instant. Traditional IT: "We need a bigger server" = weeks to order and install. Cloud: click a button.
+
+**Elasticity:** Automatic scaling based on demand. Not just "can scale" but "scales itself." VM Scale Sets add VMs when CPU hits 70% and remove them when it drops below 30%.
+
+**Global Reach:** Azure has 60+ regions worldwide. Deploy your application in Asia, Europe, and Americas simultaneously. Users connect to the nearest region for low latency.
+
+**Disaster Recovery:** Data replicated across multiple locations. If a natural disaster destroys one data center, your data exists in another. Azure Site Recovery automates failover to a secondary region.
+
+**CapEx vs OpEx:**
+CapEx (Capital Expenditure): Buy a $20,000 server. Depreciate over 5 years. It sits there whether used at 5% or 100%. If you outgrow it, buy another.
+
+OpEx (Operational Expenditure): Rent Azure resources for $500/month. No upfront cost. Stop paying when you stop using. Scale to match actual demand. Cloud shifts IT from CapEx to OpEx.
+
+**Consumption-Based Model:**
+You don't pay for infrastructure you don't use. Traditional: buy 10 servers, use 3, pay for 10. Cloud: use 3, pay for 3. Use 10 during peak, pay for 10 only during peak. This fundamentally changes IT economics.
+
+**Interview Tip:**
+"Cloud computing delivers IT services over the internet on a pay-as-you-go basis. The key benefits are: shifting CapEx to OpEx for financial flexibility, instant scalability to match demand, global reach across 60+ Azure regions, built-in high availability and disaster recovery, and leveraging Microsoft's massive security investment of $1B+ annually. I explain it to non-technical stakeholders using the electricity utility analogy — you don't build your own power plant, you plug into the grid."`,
+quiz:[
+{q:"Which is NOT a NIST cloud characteristic?",o:["On-demand self-service","Rapid elasticity","Requires physical datacenter access","Measured service"],a:2},
+{q:"Shifting from CapEx to OpEx means:",o:["Buying more hardware","Paying monthly for what you use instead of buying upfront","Cloud is free","Hiring more IT staff"],a:1},
+{q:"Azure guarantees 99.99% uptime with:",o:["A single VM","Availability Sets","Availability Zones","No SLA available"],a:2},
+{q:"Elasticity in cloud means:",o:["Servers are physically flexible","Resources automatically scale based on demand","You must manually add servers","Fixed capacity at all times"],a:1}
+]},
+
+{mod:"Cloud Concepts",id:"az900-2",title:"Service Models: IaaS, PaaS, SaaS & Serverless",
+content:`The cloud offers different levels of service depending on how much you want to manage yourself versus how much the provider manages. Understanding this is critical for the exam and for recommending the right solution.
+
+**The Pizza Analogy — Four Ways to Get Pizza:**
+
+**Traditional On-Premises (Make Everything Yourself):**
+You buy flour, tomatoes, cheese. You make the dough, sauce, and toppings. You heat your own oven. You bake, serve, and clean up. Total control, but ALL the work. In IT: you buy servers, install OS, manage networking, deploy apps, handle security, run backups — everything.
+
+**IaaS — Infrastructure as a Service (Raw Ingredients + Kitchen):**
+Azure provides: physical servers, networking, storage, and virtualization. YOU manage: operating system, middleware, runtime, applications, and data.
+
+Azure Examples: Virtual Machines, Azure Storage, Virtual Networks, Azure Backup.
+
+Best use case: Lifting an existing on-premises application to the cloud without rewriting it. A company with a legacy Windows Server application running custom software can move it to an Azure VM — same OS, same software, now in a professional data center.
+
+**PaaS — Platform as a Service (Pizza Delivery — Choose Your Toppings):**
+Azure provides: everything in IaaS PLUS the operating system, middleware, and runtime. YOU manage: only your application code and your data.
+
+Azure Examples: Azure App Service (web hosting), Azure SQL Database (managed database), Azure Functions (serverless code).
+
+Best use case: Building new applications. Your development team writes code and deploys it. No server management, no OS patching, no middleware configuration. Azure App Service gives you deployment slots for zero-downtime releases, auto-scaling for traffic spikes, and built-in SSL certificates.
+
+**SaaS — Software as a Service (Restaurant — Just Eat):**
+Azure/Microsoft provides: EVERYTHING — infrastructure, platform, and the application. YOU manage: your data and user access.
+
+Examples: Microsoft 365 (email, collaboration), Dynamics 365 (CRM/ERP), Salesforce, Dropbox.
+
+Best use case: Standard business tools. You need email? Subscribe to Exchange Online. You need CRM? Subscribe to Dynamics 365. No infrastructure, no development — just use the software.
+
+**Serverless (Pay-Per-Bite — The Food Truck That Only Charges When You Eat):**
+The most abstracted model. You write a small piece of code (a "function"), define when it should run (HTTP request, timer, file upload), and deploy it. Azure handles EVERYTHING else — scaling, availability, infrastructure. If nobody triggers your function, you pay $0. If it's triggered a million times, it handles it automatically.
+
+Azure Examples: Azure Functions, Azure Logic Apps, Azure Event Grid.
+
+Best use case: Event-driven tasks. "When a customer uploads a photo, resize it to 3 sizes." "Every night at midnight, generate a report." "When a new order arrives, send a confirmation email."
+
+**The Shared Responsibility Model — WHO MANAGES WHAT:**
+
+This is one of the most important concepts for the exam:
+
+| Responsibility | On-Prem | IaaS | PaaS | SaaS |
+|---|---|---|---|---|
+| Physical Security | You | Provider | Provider | Provider |
+| Network | You | Provider | Provider | Provider |
+| Servers | You | Provider | Provider | Provider |
+| Operating System | You | YOU | Provider | Provider |
+| Applications | You | YOU | YOU | Provider |
+| Data & Access | You | YOU | YOU | YOU |
+
+The golden rule: Regardless of the model, you are ALWAYS responsible for your **data**, your **endpoints** (devices), your **accounts**, and your **access management**. This NEVER transfers to the provider.
+
+**Real-World Migration Scenario:**
+A manufacturing company has three workloads:
+
+1. Legacy ERP system (custom, 20 years old, can't be modified): → IaaS (Azure VM). Lift-and-shift. Same OS, same software, now in Azure. Timeline: 2 weeks.
+
+2. New customer portal (web app, Node.js): → PaaS (Azure App Service). Deploy code only. Auto-scaling, managed SSL, deployment slots. Timeline: Deploy in hours.
+
+3. Email and collaboration: → SaaS (Microsoft 365). Subscribe and go. Timeline: Configure in days.
+
+4. Nightly report generation: → Serverless (Azure Functions). Runs at midnight, generates PDF, emails to management. Costs $2/month. Timeline: Build in 1 day.
+
+**Interview Tip:**
+"I recommend the service model based on the workload requirements. IaaS for legacy apps that need OS-level control — lift-and-shift to VMs. PaaS for new development — App Service eliminates infrastructure management. SaaS for standard business tools like email and CRM. Serverless for event-driven processing. The shared responsibility model is key: regardless of model, we always own data, identity, and access management."`,
+quiz:[
+{q:"Azure Virtual Machines is which service model?",o:["SaaS","PaaS","IaaS","Serverless"],a:2},
+{q:"In PaaS, who manages the operating system?",o:["The customer","The cloud provider","A third party","Nobody"],a:1},
+{q:"Which responsibility ALWAYS belongs to the customer regardless of model?",o:["Physical datacenter security","Network hardware","Data and access management","Server hardware"],a:2},
+{q:"Azure Functions is an example of:",o:["IaaS","PaaS","SaaS","Serverless"],a:3},
+{q:"A company wants email without managing any infrastructure. Which model?",o:["IaaS","PaaS","SaaS","On-premises"],a:2}
+]},
+
+{mod:"Cloud Concepts",id:"az900-3",title:"Deployment Models: Public, Private, Hybrid & Multi-Cloud",
+content:`Now you know WHAT cloud is and HOW to use it. The next question: WHERE does it run?
+
+**Public Cloud — The Apartment Building:**
+Shared infrastructure operated by Microsoft. Multiple organizations share the same physical hardware, completely isolated from each other. Azure, AWS, and GCP are public clouds.
+
+Advantages: Lowest cost (economies of scale), instant scaling, global availability, no hardware to maintain.
+Disadvantages: Less control over infrastructure, shared with others, potential data sovereignty concerns.
+Best for: 90% of workloads — web apps, mobile backends, dev/test, analytics, AI/ML.
+
+**Private Cloud — Your Own House:**
+Dedicated infrastructure for one organization only. Run in your own datacenter or by a hosting provider. You control everything but maintain everything.
+
+Azure Example: Azure Stack Hub/HCI — run Azure services in YOUR datacenter.
+Best for: Regulated industries (banking, defense), organizations with strict data residency requirements.
+
+**Hybrid Cloud — House + Apartment (Most Common!):**
+Combines public and private cloud. Keep sensitive data on-premises, use public cloud for everything else. 90%+ of enterprises use hybrid today.
+
+Why hybrid dominates: Companies have existing on-premises investments worth millions. They can't move everything overnight. Hybrid lets them gradually migrate while keeping sensitive workloads on-prem. Azure AD Connect bridges on-premises Active Directory to Azure AD. Azure Arc manages on-prem servers from the Azure portal.
+
+Real scenario: A hospital keeps patient records on-premises (HIPAA), hosts their website on Azure App Service (needs to scale), syncs identity via Azure AD Connect, and uses Azure Backup for disaster recovery. Classic hybrid.
+
+**Multi-Cloud — Multiple Apartments:**
+Using two or more public clouds. Azure for AI/ML, AWS for specific services, GCP for analytics.
+
+Tool: Azure Arc manages resources across Azure, AWS, GCP, and on-premises from one portal.
+Advantages: Avoid vendor lock-in, use best-of-breed services.
+Disadvantages: Complex management, multiple skill sets needed.
+
+**Azure Government & Sovereign Clouds:**
+Azure Government: Physically separated instances for US government. FedRAMP, DoD, ITAR compliant. Only US-screened personnel operate it.
+Azure China (21Vianet): Operated by a Chinese company (21Vianet) to comply with Chinese data residency laws. Physically and logically separated from global Azure.
+
+**Interview Tip:**
+"Most enterprises use hybrid cloud because they have existing on-premises investments and compliance requirements that prevent a full cloud migration. I recommend a phased approach: start with Azure AD Connect for hybrid identity, migrate email and collaboration to M365, use Azure Backup for disaster recovery, and gradually move workloads as compliance allows. Azure Arc provides unified management across the entire hybrid and multi-cloud estate."`,
+quiz:[
+{q:"Which deployment model do 90%+ of enterprises use?",o:["Public only","Private only","Hybrid cloud","Multi-cloud"],a:2},
+{q:"Azure Stack Hub enables:",o:["Public cloud only","Running Azure services in your own datacenter","Only SaaS applications","Only networking"],a:1},
+{q:"Azure Arc manages:",o:["Only Azure resources","On-prem + multi-cloud resources from Azure portal","Only networking","Only storage"],a:1},
+{q:"Azure Government is:",o:["Available to all customers","A physically separated Azure for US government","A cheaper version of Azure","Only for the military"],a:1}
+]},
+
+{mod:"Azure Architecture & Services",id:"az900-4",title:"Azure Regions, Availability Zones & Resource Organization",
+content:`Azure's global infrastructure is massive — understanding it is essential for designing reliable, compliant solutions.
+
+**Azure Regions (60+ worldwide):**
+A region is a set of datacenters in a geographic area. Examples: East US (Virginia), West Europe (Netherlands), Southeast Asia (Singapore). Each region has multiple datacenters connected by high-speed networks.
+
+Why regions matter: Data residency (keep EU customer data in EU regions for GDPR), latency (deploy close to your users), and service availability (not all services available in all regions).
+
+**Availability Zones (3+ per region):**
+Within a region, Availability Zones are physically SEPARATE buildings with independent power, cooling, and networking. If Building A catches fire, Buildings B and C keep running. Deploy your application across zones for 99.99% SLA.
+
+Example: Deploy your web server in Zone 1, a backup in Zone 2, and your database in Zone 3. If any single zone fails, the others continue serving users.
+
+**Region Pairs:**
+Azure pairs regions for disaster recovery: East US ↔ West US, North Europe ↔ West Europe. Benefits: During planned maintenance, only one region in a pair updates at a time. During outages, one region in each pair is prioritized for recovery. Data stays within the same geography (important for compliance).
+
+**Azure Resource Hierarchy — How You Organize Everything:**
+
+**Management Groups** (top level): Organize multiple subscriptions. Apply policies and RBAC that inherit down. Example: "Corporate IT" management group applies security policies to all subscriptions beneath it.
+
+**Subscriptions:** Billing boundary and access boundary. Example: "Production" subscription and "Development" subscription — separate bills, separate access controls. Types: Enterprise Agreement (EA), Pay-As-You-Go (PAYG), Cloud Solution Provider (CSP), Free Trial.
+
+**Resource Groups:** Logical containers for related resources. Example: "MyWebApp-RG" contains the App Service, SQL Database, Storage Account, and Application Insights for one application. Resources can only exist in ONE resource group. Delete the resource group = delete everything inside it.
+
+**Resources:** The actual Azure services — VMs, databases, storage accounts, etc.
+
+Policy and RBAC applied at any level flow DOWNWARD through the hierarchy. A policy applied at the Management Group level affects all subscriptions, resource groups, and resources below it.
+
+**Interview Tip:**
+"I design for availability using Availability Zones (99.99% SLA) for production workloads and region pairs for disaster recovery. The resource hierarchy — Management Groups → Subscriptions → Resource Groups → Resources — enables governance at scale through policy inheritance. I separate subscriptions by environment (prod/dev) for billing isolation and use resource groups to organize related resources for lifecycle management."`,
+quiz:[
+{q:"How many Availability Zones does each enabled Azure region have?",o:["1","2","3 or more","Exactly 10"],a:2},
+{q:"Region Pairs are used for:",o:["Cost savings","Disaster recovery and sequential updates","Faster deployment","Better security"],a:1},
+{q:"Azure Policy applied at Management Group level affects:",o:["Only that management group","All subscriptions and resources below it","Only one subscription","Nothing — it must be applied at resource level"],a:1},
+{q:"A Resource Group is deleted. What happens to resources inside?",o:["Nothing — they're preserved","They're moved to another group","ALL resources inside are deleted","Only VMs are deleted"],a:2}
+]},
+
+{mod:"Azure Architecture & Services",id:"az900-5",title:"Azure Compute Services",
+content:`Compute is the engine of the cloud — where your applications actually run. Azure offers options for every workload.
+
+**Azure Virtual Machines (IaaS):**
+Full operating system control. Choose the OS (Windows, Linux), install any software, configure everything. Like having a physical server, but in Azure.
+
+VM Series (sizes optimized for different workloads):
+- B-series (Burstable): For dev/test and low-traffic websites. Cheap, with burstable CPU — accumulates credits during idle time, uses them during spikes.
+- D-series (General Purpose): Balanced CPU-to-memory ratio. Good for most production workloads — web servers, application servers, small databases.
+- E-series (Memory Optimized): High memory-to-CPU ratio. For databases, in-memory caching, analytics.
+- F-series (Compute Optimized): High CPU-to-memory ratio. For batch processing, gaming, scientific computing.
+- N-series (GPU): NVIDIA GPUs for machine learning, video rendering, and scientific simulation.
+
+**Availability Options:**
+- Single VM with Premium SSD: 99.9% SLA
+- Availability Set: Spreads VMs across fault domains (different racks) and update domains (patched at different times). 99.95% SLA.
+- Availability Zones: Spreads VMs across physically separate buildings. 99.99% SLA.
+- VM Scale Sets: Automatically creates and removes VMs based on demand. Scales from 1 to 1,000 instances. Metric-based: "If CPU > 70%, add a VM. If CPU < 30%, remove one."
+
+**Azure App Service (PaaS):**
+Host web applications without managing servers. Supports .NET, Java, Node.js, Python, PHP, Ruby. Key features: Deployment Slots (deploy to staging, test, swap to production with zero downtime), auto-scaling, custom domains + managed SSL, integrated CI/CD from GitHub Actions or Azure DevOps. If it breaks, swap back to the previous version in seconds.
+
+**Azure Functions (Serverless):**
+Write code that runs only when triggered. Triggers: HTTP request, timer schedule, blob upload, queue message, Event Grid event. Pay only per execution (first 1 million executions/month are FREE). Scales automatically from zero to thousands of instances.
+
+**Azure Kubernetes Service (AKS):**
+Managed Kubernetes for containerized applications. The control plane is FREE — you only pay for worker nodes. Features: node pools (different VM sizes for different workloads), cluster autoscaler (adds/removes nodes), Horizontal Pod Autoscaler (adds/removes pods), Azure AD RBAC integration.
+
+**Azure Container Instances (ACI):** Run containers in seconds without managing VMs. Per-second billing. Good for quick tasks and batch jobs.
+
+**Azure Virtual Desktop (AVD):** Desktop-as-a-Service. Run Windows 11 desktops in Azure, accessible from any device. Multi-session Windows 11 (unique to Azure — multiple users share one VM). Integrates with M365 apps and Azure AD.
+
+**Azure Batch:** Run large-scale parallel computing jobs. Submit thousands of tasks, Azure manages the VM pool automatically. For scientific simulations, financial modeling, rendering.
+
+**Decision Matrix — When to use which:**
+Legacy app, need OS control → VM. New web app, don't want to manage servers → App Service. Event-driven task, pay per use → Functions. Microservices architecture → AKS. Quick container job → ACI. Desktop for remote workers → AVD.
+
+**Interview Tip:**
+"I choose the compute service based on the workload: VMs for legacy lift-and-shift with full OS control, App Service for new web apps with deployment slots and auto-scaling, Functions for event-driven workloads with pay-per-execution, and AKS for microservices at scale. For high availability, I deploy VMs across Availability Zones (99.99% SLA) and use Scale Sets for auto-scaling."`,
+quiz:[
+{q:"Which VM series is best for machine learning with GPUs?",o:["B-series","D-series","E-series","N-series"],a:3},
+{q:"Azure Functions pricing model:",o:["Pay monthly regardless of usage","Pay per execution (first 1M free/month)","Pay per VM hour","Free for all customers"],a:1},
+{q:"VM Scale Sets provide:",o:["Manual scaling only","Auto-scale from 1 to 1000 VMs based on metrics","Fixed 10 VMs","Only scaling down"],a:1},
+{q:"AKS (Azure Kubernetes Service) control plane costs:",o:["$100/month","$500/month","Free — you pay for worker nodes only","Per-container pricing"],a:2},
+{q:"App Service deployment slots enable:",o:["Faster VM performance","Zero-downtime deployments via swap","Database replication","Storage scaling"],a:1}
+]},
+
+{mod:"Azure Architecture & Services",id:"az900-6",title:"Azure Networking Services",
+content:`Networking connects everything in Azure. Understanding these services is critical for the exam.
+
+**Virtual Network (VNet):**
+Your private network in Azure. You define the address space (e.g., 10.0.0.0/16 = 65,536 IPs), create subnets (10.0.1.0/24 for web tier, 10.0.2.0/24 for app tier, 10.0.3.0/24 for database tier). Resources in the same VNet communicate freely. Resources in different VNets need explicit peering.
+
+**VNet Peering:** Connect two VNets so resources communicate as if on the same network. NOT transitive — if VNet A peers with VNet B, and VNet B peers with VNet C, A and C CANNOT communicate unless they also peer directly. Traffic stays on Microsoft's backbone (never the public internet).
+
+**VPN Gateway — Encrypted Tunnel Over Internet:**
+Site-to-Site (S2S): Connect your entire office to Azure. Always-on IPSec tunnel between your on-premises VPN device and Azure's VPN Gateway.
+Point-to-Site (P2S): Connect individual laptops to Azure. For remote workers who need access to Azure resources.
+VNet-to-VNet: Connect two Azure VNets in different regions.
+
+**ExpressRoute — Private Dedicated Connection:**
+A direct, private connection from your datacenter to Azure that NEVER touches the public internet. Bandwidth from 50 Mbps to 100 Gbps. For organizations requiring guaranteed performance, lower latency, and higher security (banks, hospitals, trading firms).
+
+**Azure Load Balancer (Layer 4):**
+Distributes TCP/UDP traffic across multiple VMs. Ensures no single VM is overwhelmed. Health probes check if VMs are responding. Standard SKU supports Availability Zones.
+
+**Azure Application Gateway (Layer 7):**
+HTTP/HTTPS load balancer with URL-based routing (send /api requests to backend pool A, /images to pool B). Includes Web Application Firewall (WAF) for protection against SQL injection and cross-site scripting.
+
+**Azure Front Door (Global Layer 7):**
+Global load balancer + CDN + WAF. Routes users to the nearest backend using anycast. Split traffic for A/B testing. Instant failover. Built-in caching for performance.
+
+**Azure Traffic Manager (DNS-based):**
+Routes traffic at the DNS level. Routing methods: Priority (active/passive failover), Weighted (split traffic by percentage), Performance (route to nearest region), Geographic (route based on user location).
+
+**Azure DNS:** Host your domains. Public zones for internet-facing names. Private zones for internal resolution within VNets with auto-registration.
+
+**Azure Bastion:** Secure RDP/SSH access to VMs through the Azure portal WITHOUT exposing public IPs. Connects over TLS. Eliminates the need for jump boxes.
+
+**Azure Firewall:** Cloud-native managed firewall. FQDN filtering (allow *.microsoft.com), threat intelligence (block known malicious IPs), and Premium tier adds TLS inspection and intrusion detection.
+
+**Network Security Groups (NSGs):** Stateful firewall rules at the subnet or NIC level. Priority-based (lower number = higher priority). Default rules: allow VNet-to-VNet, allow Azure Load Balancer, deny all internet inbound.
+
+**Azure DDoS Protection:** Basic (free, always-on L3/L4 protection). Standard (ML-based adaptive protection, real-time metrics, cost protection guarantee during attacks).
+
+**Interview Tip:**
+"I design hub-spoke network topologies with Azure Firewall in the central hub and VNet peering to spoke networks. VPN Gateway provides encrypted connectivity to on-premises, with ExpressRoute as the premium option for guaranteed bandwidth. For web applications, I layer Front Door globally with Application Gateway per region for URL routing and WAF. Azure Bastion eliminates public IP exposure for RDP/SSH administration."`,
+quiz:[
+{q:"VNet Peering is transitive by default?",o:["Yes, always","No — A↔B and B↔C does NOT mean A↔C communicates","Only in the same region","Only with ExpressRoute"],a:1},
+{q:"Azure Bastion provides:",o:["DNS hosting","Secure RDP/SSH without public IPs via Azure portal","Load balancing","CDN caching"],a:1},
+{q:"ExpressRoute provides:",o:["Encrypted tunnel over internet","Private dedicated connection that never touches internet","Free VPN","WiFi connectivity"],a:1},
+{q:"For global HTTP load balancing with CDN and WAF, use:",o:["Azure Load Balancer","Traffic Manager","Azure Front Door","Application Gateway"],a:2}
+]},
+
+{mod:"Azure Architecture & Services",id:"az900-7",title:"Azure Storage, Database, AI & IoT Services",
+content:`Azure offers specialized services for storage, databases, artificial intelligence, and Internet of Things.
+
+**Azure Storage Account — Four Services in One:**
+
+**Blob Storage (Binary Large Object):** For any unstructured data — documents, images, videos, backups, logs. Three access tiers:
+- Hot: Frequent access. Highest storage cost, lowest access cost. For current data.
+- Cool: Infrequent access (30+ days). Lower storage cost, higher access cost. For backups, older reports.
+- Archive: Rare access (180+ days). Cheapest storage ($0.00099/GB!), but retrieval takes hours. For compliance archives, historical data.
+Lifecycle Management automatically moves data between tiers based on age.
+
+**Azure Files:** Cloud file shares accessible via SMB or NFS. Replace on-premises file servers. Supports Azure File Sync for hybrid scenarios.
+
+**Table Storage:** NoSQL key-value store. Billions of rows, super fast, very cheap. For IoT data, user preferences, metadata.
+
+**Queue Storage:** Message queuing between application components. Decouple services for reliability.
+
+**Storage Replication:**
+- LRS (Locally Redundant): 3 copies in one datacenter. Cheapest. Protects against disk failure.
+- ZRS (Zone Redundant): 3 copies across 3 Availability Zones. Protects against zone failure.
+- GRS (Geo-Redundant): 6 copies across 2 regions. Protects against regional disaster.
+- RA-GRS (Read-Access GRS): Like GRS but you can read from the secondary region. Best availability.
+
+**Azure Databases:**
+
+**Azure SQL Database:** Fully managed SQL Server (PaaS). Azure handles patching, backups, HA. Serverless tier pauses when idle and auto-resumes. Up to 99.995% SLA with zone-redundant configuration.
+
+**Azure Cosmos DB:** Globally distributed, multi-model NoSQL database. Guaranteed sub-10 millisecond latency anywhere in the world. Five consistency levels from strong to eventual. APIs for SQL, MongoDB, Cassandra, Gremlin, and Table.
+
+**Azure Database for MySQL/PostgreSQL/MariaDB:** Managed open-source databases. Same engines your developers know, but fully managed.
+
+**Azure Cache for Redis:** In-memory caching for blazing-fast data access. Reduces database load by caching frequent queries.
+
+**Azure AI Services:**
+
+**Azure AI Services (formerly Cognitive Services):** Pre-built APIs you can call without any ML expertise:
+- Vision: Image analysis, OCR, face detection, custom image classification
+- Speech: Speech-to-text, text-to-speech, real-time translation, speaker recognition
+- Language: Sentiment analysis, entity recognition, translation, Q&A
+- Decision: Anomaly detection, content moderation, personalization
+
+**Azure OpenAI Service:** Access to GPT-4, DALL-E, Whisper with enterprise-grade security. Your data stays in your tenant, is NOT used to train the model. For enterprise AI applications.
+
+**Azure Machine Learning:** Full ML platform. Designer (drag-and-drop no-code ML), AutoML (automatic model selection and tuning), MLOps (operationalize models with CI/CD). For data science teams building custom models.
+
+**Azure IoT Services:**
+
+**IoT Hub:** Central message hub for millions of IoT devices. Bidirectional communication (device-to-cloud, cloud-to-device). Device twins (digital representation of physical devices). Most flexible — requires development.
+
+**IoT Central:** SaaS IoT platform. No code needed. Templates for common scenarios (retail, energy, healthcare). Dashboards, rules, and alerts out of the box. Best for quick deployment.
+
+**Azure Sphere:** Secured hardware (microcontroller) + OS + cloud security for IoT devices. End-to-end security from chip to cloud.
+
+**Azure Digital Twins:** Model entire physical environments. A digital replica of a building, factory, or city. Combine with IoT data for simulation and optimization.
+
+**Other Important Services:**
+- **Azure DevOps:** Boards (work tracking), Repos (Git), Pipelines (CI/CD), Test Plans, Artifacts. Complete DevOps toolchain.
+- **Azure Marketplace:** 18,000+ third-party solutions ready to deploy.
+- **Azure Migrate:** Discover, assess, and migrate on-premises workloads to Azure.
+- **Azure Arc:** Manage on-premises and multi-cloud resources from the Azure portal.
+
+**Interview Tip:**
+"For storage, I select the replication level based on the data's criticality — LRS for dev/test, ZRS for production in a single region, GRS for disaster recovery. Blob lifecycle policies auto-tier data to reduce costs. For databases: Azure SQL for relational workloads, Cosmos DB for globally distributed low-latency NoSQL. For AI: pre-built AI Services for common tasks, Azure OpenAI for GPT-4 applications, and Azure ML for custom model development."`,
+quiz:[
+{q:"Which storage tier is cheapest?",o:["Hot","Cool","Cold","Archive"],a:3},
+{q:"Cosmos DB guarantees latency under:",o:["1 second","100 milliseconds","10 milliseconds","1 millisecond"],a:2},
+{q:"GRS provides how many copies of data?",o:["3 in one datacenter","3 across zones","6 across two regions","9 across three regions"],a:2},
+{q:"IoT Central is which service model?",o:["IaaS","PaaS","SaaS (no-code)","Serverless"],a:2},
+{q:"Azure OpenAI data stays:",o:["Public cloud shared pool","In your tenant, NOT used for training","On OpenAI servers","On user devices"],a:1}
+]},
+
+{mod:"Security, Identity & Governance",id:"az900-8",title:"Azure Identity, Security & Governance",
+content:`Security and governance are the foundation of any Azure environment. This section covers identity (who are you?), security (how do we protect resources?), and governance (how do we enforce rules?).
+
+**Azure AD / Microsoft Entra ID — The Identity Foundation:**
+Azure AD handles authentication (proving identity) and authorization (checking permissions) for all Azure and M365 services. It provides: Single Sign-On (SSO) to 3,000+ applications, Multi-Factor Authentication (MFA), Conditional Access (context-based access policies), and B2B/B2C identity (guest and customer access).
+
+**MFA Methods (ranked by security):**
+1. FIDO2 Security Keys — phishing-resistant hardware tokens
+2. Windows Hello — biometric (face/fingerprint) tied to TPM
+3. Authenticator App — push notification with number matching
+4. SMS/Phone — least secure due to SIM-swapping risk
+
+**Conditional Access (P1):** IF/THEN rules. Example: "If signing in from unknown location on unmanaged device → require MFA + restrict to web-only access."
+
+**Identity Protection (P2):** ML-based risk detection. Detects impossible travel, anonymous IPs, password spray attacks. Auto-remediates by requiring MFA or blocking access.
+
+**PIM (P2):** Just-in-time admin access. Activate Global Admin for 2 hours with justification. Privilege expires automatically. Dramatically reduces risk of compromised admin accounts.
+
+**Zero Trust:** Never trust, always verify. Three principles: (1) Verify explicitly — authenticate based on all signals, (2) Least privilege — minimum permissions needed, (3) Assume breach — design as if attackers are already inside.
+
+**RBAC — Role-Based Access Control:**
+Controls who can do what on which resources. Formula: Security Principal + Role + Scope = Assignment.
+Built-in roles: Owner (full access + delegate), Contributor (full access, can't delegate), Reader (view only).
+Scope hierarchy: Management Group → Subscription → Resource Group → Resource. Permissions inherit downward. Assign at the narrowest scope needed.
+
+**Azure Policy — Enforce Rules:**
+Modes: Audit (report violations), Deny (prevent non-compliant resources), DeployIfNotExists (auto-remediate), Modify (add/change properties). Group related policies into Initiatives. Example: "All storage accounts must use encryption" — Policy denies creation without encryption.
+
+**Other Governance Tools:**
+- Management Groups: Organize subscriptions hierarchically
+- Resource Locks: CanNotDelete (prevent accidental deletion) or ReadOnly (prevent any changes)
+- Tags: Key-value metadata (CostCenter:IT, Environment:Production). Enforce mandatory tags via Policy.
+- Blueprints: Package policies + RBAC + ARM templates for repeatable environment setup
+
+**Security Services:**
+- **Azure Key Vault:** Store secrets (passwords, API keys), encryption keys (HSM-backed), and SSL certificates. Apps access via Managed Identity — no credentials in code.
+- **Azure DDoS Protection:** Basic (free, L3/L4) or Standard (ML-based, metrics, cost guarantee).
+- **Azure Firewall:** Managed cloud firewall with FQDN filtering and threat intelligence. Premium adds TLS inspection and IDPS.
+- **Microsoft Defender for Cloud:** CSPM across Azure, AWS, and GCP. Provides Secure Score with actionable recommendations. Enables advanced protections for VMs, SQL, storage, and more.
+
+**Monitoring:**
+- **Azure Monitor:** Collects metrics (CPU%, memory, disk IOPS) and logs from all resources.
+- **Log Analytics:** Central log repository queried with KQL (Kusto Query Language).
+- **Application Insights:** APM for web apps — request rates, response times, failures.
+- **Azure Service Health:** Real-time status of Azure services, planned maintenance, health advisories.
+
+**Interview Tip:**
+"I implement Zero Trust with Azure AD as the identity control plane: MFA for all users via Conditional Access, PIM for just-in-time admin access, and Identity Protection for risk-based policies. For governance: Management Groups for hierarchy, Azure Policy for compliance guardrails (required encryption, allowed regions), mandatory tags for cost tracking, and resource locks on production. Defender for Cloud provides Secure Score and multi-cloud security posture management."`,
+quiz:[
+{q:"Which MFA method is most secure?",o:["SMS text code","Phone call","FIDO2 security key","Email code"],a:2},
+{q:"Azure Policy 'Deny' mode does:",o:["Only reports violations","Prevents non-compliant resource creation","Deletes existing resources","Sends email notifications"],a:1},
+{q:"Key Vault stores:",o:["Virtual machines","Secrets, encryption keys, and certificates","Database backups","Network configurations"],a:1},
+{q:"Defender for Cloud provides security across:",o:["Only Azure","Azure + AWS + GCP (multi-cloud)","Only VMs","Only storage accounts"],a:1},
+{q:"RBAC permissions inherit in which direction?",o:["Upward only","Downward only","Both directions","No inheritance"],a:1}
+]},
+
+{mod:"Pricing, Cost & SLAs",id:"az900-9",title:"Azure Pricing, Cost Optimization & SLAs",
+content:`Understanding Azure pricing is essential for both the exam and real-world cost management.
+
+**Pricing Models:**
+
+**Pay-As-You-Go (PAYG):** No commitment. Highest per-unit price. Pay by the minute/hour for what you use. Best for: dev/test, unpredictable workloads, getting started.
+
+**Reserved Instances (1 or 3 years):** Commit to a specific VM size in a specific region for 1 or 3 years. Savings: up to 72% vs PAYG. Best for: steady production workloads that run 24/7. You pay whether you use it or not.
+
+**Spot VMs:** Use Azure's unused capacity at massive discounts — up to 90% off. BUT: Azure can evict your VM with 30 seconds notice when capacity is needed. Best for: batch processing, rendering, testing — any workload that can handle interruptions.
+
+**Azure Hybrid Benefit:** Bring your existing Windows Server or SQL Server licenses (with Software Assurance) to Azure. Combine with Reserved Instances for up to 85% savings. Example: A Windows VM that costs $200/month PAYG → $56/month with Reserved → $30/month with Reserved + Hybrid Benefit.
+
+**Cost Management Tools:**
+
+**Azure Pricing Calculator (azure.microsoft.com/pricing/calculator):** Estimate costs BEFORE deploying. Select services, configure sizes, see monthly estimates. Use to build proposals and get budget approval.
+
+**TCO (Total Cost of Ownership) Calculator:** Compare the cost of running workloads on-premises vs in Azure. Accounts for hardware, software, electricity, cooling, IT labor, and datacenter space. Great for building a business case for cloud migration.
+
+**Azure Cost Management + Billing:** Monitor costs AFTER deployment. Cost Analysis breaks down spending by resource, tag, location, or service. Budgets set spending limits with alerts at 80%, 100%, or custom thresholds. Exports schedule cost data to storage for external analysis.
+
+**Azure Advisor:** AI-powered recommendations across four categories: Cost (right-size VMs, delete unused resources), Security (enable MFA, fix vulnerabilities), Reliability (add redundancy), and Performance (optimize configurations).
+
+**Cost Optimization Tips:**
+1. Right-size VMs — Azure Advisor identifies VMs running at 5% CPU → downsize from D4 to D2
+2. Reserved Instances for production — 72% savings for steady workloads
+3. Spot VMs for batch/test — 90% savings for interruptible workloads
+4. Auto-shutdown dev/test VMs at night and weekends — save 65%+
+5. Blob lifecycle policies — auto-move data Hot→Cool→Archive by age
+6. Azure Hybrid Benefit — use existing Windows/SQL licenses
+7. Delete unused resources — unattached disks, old snapshots, unused public IPs
+8. Tags for chargeback — tag every resource with CostCenter and Owner
+
+**Azure SLAs (Service Level Agreements):**
+Microsoft guarantees specific uptime levels with financial backing (service credits if they fail):
+- Single VM (Premium SSD): 99.9% (8.76 hours downtime/year)
+- Availability Set: 99.95% (4.38 hours/year)
+- Availability Zones: 99.99% (52.56 minutes/year)
+- Azure SQL (zone-redundant): 99.995%
+
+**Composite SLA:** When your application uses multiple services, multiply their SLAs. Web App (99.95%) × SQL Database (99.99%) = 99.94%. The composite SLA is always LOWER than the individual SLAs. To improve: add redundancy, use Availability Zones, implement retry logic.
+
+**Service Lifecycle:**
+Preview: New features available for testing. No SLA, no support commitment. May change or be removed.
+General Availability (GA): Fully supported with SLA. Safe for production.
+Deprecated: Service being retired. Microsoft gives 12+ months notice to migrate.
+
+**Interview Tip:**
+"I optimize Azure costs through a structured approach: Reserved Instances for production workloads (72% savings), Spot VMs for fault-tolerant batch processing (90% off), right-sizing using Azure Advisor, auto-shutdown for dev/test, and blob lifecycle policies for storage. Tags enable cost allocation by department. I set budget alerts at 80% and 100%. For SLA design, I deploy across Availability Zones for 99.99% and calculate composite SLAs to identify reliability bottlenecks."`,
+quiz:[
+{q:"Reserved Instances can save up to:",o:["25%","50%","72%","100%"],a:2},
+{q:"Spot VMs can be:",o:["Never interrupted","Evicted with 30 seconds notice","Reserved for years","Free forever"],a:1},
+{q:"Availability Zones provide what SLA?",o:["99.9%","99.95%","99.99%","100%"],a:2},
+{q:"Composite SLA is calculated by:",o:["Adding individual SLAs","Multiplying individual SLAs together","Taking the highest SLA","Averaging all SLAs"],a:1},
+{q:"Azure Hybrid Benefit uses:",o:["Azure credits","Existing Windows/SQL Server licenses","Free tier benefits","Student discounts"],a:1}
+]}
+];
+
+
+function AZ900App() {
+  const [view, setView] = useState("home");
+  const [topicIdx, setTopicIdx] = useState(0);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [ans, setAns] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [prog, setProg] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("az900-prog")) || {}; } catch { return {}; }
+  });
+  const [intIdx, setIntIdx] = useState(0);
+  const [intShow, setIntShow] = useState(false);
+  const topRef = useRef(null);
+
+  useEffect(() => { try { localStorage.setItem("az900-prog", JSON.stringify(prog)); } catch {} }, [prog]);
+  useEffect(() => { topRef.current?.scrollIntoView({ behavior: "smooth" }); }, [topicIdx, view]);
+
+  const topic = L[topicIdx];
+  const modules = [...new Set(L.map(l => l.mod))];
+  const getModTopics = (m) => L.filter(l => l.mod === m);
+  const pct = Math.round(Object.keys(prog).filter(k => prog[k]).length / L.length * 100);
+  const c = COURSE.color;
+
+  const renderText = (text) => {
+    if (!text) return null;
+    const lines = text.split(/\\n|\n/);
+    return lines.map((line, i) => {
+      if (!line.trim()) return <div key={i} style={{ height: 12 }} />;
+      let html = line
+        .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:' + c + '">$1</strong>');
+      if (line.trim().startsWith("- ")) {
+        html = '<span style="color:' + c + ';margin-right:8px">\u25cf</span>' + line.trim().slice(2);
+      }
+      return <div key={i} style={{ marginBottom: 5, lineHeight: 1.85, fontSize: 15, color: "#dce1eb" }} dangerouslySetInnerHTML={{ __html: html }} />;
+    });
+  };
+
+  const ProgressBar = ({ p, h = 7 }) => (
+    <div style={{ width: "100%", height: h, borderRadius: h, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+      <div style={{ width: p + "%", height: "100%", borderRadius: h, background: "linear-gradient(90deg," + c + "," + c + "cc)", transition: "width 0.6s" }} />
+    </div>
+  );
+
+  const cardStyle = { background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 20, marginBottom: 12, transition: "all 0.2s" };
+  const btnStyle = { padding: "11px 22px", borderRadius: 11, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 14, transition: "all 0.15s" };
+
+  // ━━━ HOME VIEW ━━━
+  if (view === "home") {
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px 16px 60px" }}>
+          <div style={{ textAlign: "center", padding: "30px 0 20px" }}>
+            <div style={{ fontSize: 56, marginBottom: 6 }}>{COURSE.icon}</div>
+            <h1 style={{ fontSize: 28, fontWeight: 900, color: c, margin: "0 0 4px" }}>{COURSE.title}</h1>
+            <p style={{ color: "#8892a6", fontSize: 13, margin: "0 0 4px" }}>{COURSE.desc}</p>
+            <p style={{ color: "#5a6478", fontSize: 12, margin: "0 0 16px" }}>by <span style={{ color: "#FF6B35", fontWeight: 700 }}>Ram Mohan Pathak</span></p>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", maxWidth: 400, margin: "0 auto" }}>
+              <ProgressBar p={pct} />
+              <span style={{ fontSize: 15, fontWeight: 700, color: c }}>{pct}%</span>
+              <span style={{ fontSize: 11, color: "#5a6478" }}>{Object.keys(prog).filter(k => prog[k]).length}/{L.length}</span>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 8, margin: "0 0 20px", flexWrap: "wrap" }}>
+            {[
+              { v: L.length, l: "Lessons", ic: "\ud83d\udcd6" },
+              { v: L.reduce((a, t) => a + (t.quiz ? t.quiz.length : 0), 0), l: "Quiz Q's", ic: "\ud83d\udcdd" },
+              { v: COURSE.interview ? COURSE.interview.length : 0, l: "Interview", ic: "\ud83c\udf99\ufe0f" },
+              { v: COURSE.roles ? COURSE.roles.length : 0, l: "Roles", ic: "\ud83d\udcbc" }
+            ].map((s, i) => (
+              <div key={i} style={{ flex: "1 1 100px", ...cardStyle, textAlign: "center", padding: "12px 8px", cursor: "default" }}>
+                <div style={{ fontSize: 13 }}>{s.ic}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: c }}>{s.v}</div>
+                <div style={{ fontSize: 10, color: "#8892a6" }}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+
+          {modules.map((mod, mi) => {
+            const topics = getModTopics(mod);
+            return (
+              <div key={mi} style={{ marginBottom: 20 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: 7, background: c + "20", color: c, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13 }}>{mi + 1}</div>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: c, flex: 1 }}>{mod}</h3>
+                  <span style={{ fontSize: 11, color: "#5a6478" }}>{topics.filter(t => prog[t.id]).length}/{topics.length}</span>
+                </div>
+                {topics.map((t, ti) => {
+                  const idx = L.indexOf(t);
+                  const done = prog[t.id];
+                  return (
+                    <div key={t.id} onClick={() => { setTopicIdx(idx); setShowQuiz(false); setAns({}); setSubmitted(false); setView("topic"); }}
+                      style={{ ...cardStyle, display: "flex", alignItems: "center", gap: 10, padding: 14, cursor: "pointer", borderColor: done ? "#34d39930" : "rgba(255,255,255,0.04)" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.025)"; }}>
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: done ? "#34d39912" : "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0, color: done ? "#34d399" : "#5a6478" }}>
+                        {done ? "\u2705" : (mi + 1) + "." + (ti + 1)}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: "#e8ecf4" }}>{t.title}</div>
+                        {t.quiz && <div style={{ fontSize: 10, color: "#5a6478", marginTop: 2 }}>\ud83d\udcdd {t.quiz.length} quiz questions</div>}
+                      </div>
+                      <span style={{ fontSize: 16, color: "#5a6478" }}>\u2192</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+            {COURSE.interview && COURSE.interview.length > 0 && (
+              <div style={{ ...cardStyle, cursor: "pointer" }} onClick={() => setView("interview")}>
+                <h3 style={{ margin: "0 0 4px", fontSize: 15, color: "#a78bfa" }}>\ud83c\udf99\ufe0f Interview Prep</h3>
+                <p style={{ fontSize: 11, color: "#8892a6", margin: 0 }}>{COURSE.interview.length} Q&As with model answers</p>
+              </div>
+            )}
+            {COURSE.roles && COURSE.roles.length > 0 && (
+              <div style={{ ...cardStyle, cursor: "pointer" }} onClick={() => setView("career")}>
+                <h3 style={{ margin: "0 0 4px", fontSize: 15, color: "#34d399" }}>\ud83d\udcbc Career & Resume</h3>
+                <p style={{ fontSize: 11, color: "#8892a6", margin: 0 }}>{COURSE.roles.length} roles + resume bullets</p>
+              </div>
+            )}
+          </div>
+
+          <div style={{ textAlign: "center", padding: "20px 0", color: "#3d4556", fontSize: 10 }}>Smart Tutor Ram by Ram Mohan Pathak</div>
+        </div>
+        <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:2px}button:hover{filter:brightness(1.08)}button:active{transform:scale(.98)}`}</style>
+      </div>
+    );
+  }
+
+  // ━━━ TOPIC VIEW ━━━
+  if (view === "topic" && topic) {
+    const score = topic.quiz ? topic.quiz.filter((q, i) => ans[i] === q.a).length : 0;
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <div ref={topRef} />
+        <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(10,14,26,0.92)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 48, backdropFilter: "blur(16px)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: "#e8ecf4", cursor: "pointer", fontSize: 18 }}>\u2190</button>
+            <span style={{ fontWeight: 800, fontSize: 13, color: c }}>{COURSE.title.split(":")[0]}</span>
+          </div>
+          <span style={{ fontSize: 11, color: "#5a6478" }}>{topicIdx + 1}/{L.length}</span>
+        </nav>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "16px 14px 60px" }}>
+          <div style={{ display: "inline-block", padding: "4px 12px", borderRadius: 16, fontSize: 11, fontWeight: 600, background: c + "18", color: c, marginBottom: 6 }}>{topic.mod}</div>
+          <h2 style={{ margin: "6px 0 14px", fontSize: 22, fontWeight: 800, color: "#e8ecf4" }}>{topic.title}</h2>
+
+          {topic.quiz && topic.quiz.length > 0 && (
+            <div style={{ display: "flex", gap: 3, marginBottom: 16, background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: 3 }}>
+              <button onClick={() => setShowQuiz(false)} style={{ ...btnStyle, flex: 1, background: !showQuiz ? c : "transparent", color: !showQuiz ? "#fff" : "#8892a6" }}>\ud83d\udcd6 Lesson</button>
+              <button onClick={() => { setShowQuiz(true); setAns({}); setSubmitted(false); }} style={{ ...btnStyle, flex: 1, background: showQuiz ? c : "transparent", color: showQuiz ? "#fff" : "#8892a6" }}>\ud83d\udcdd Quiz ({topic.quiz.length})</button>
+            </div>
+          )}
+
+          {!showQuiz ? (
+            <div style={{ ...cardStyle, cursor: "default", padding: 28, lineHeight: 1.85 }}>
+              {renderText(topic.content)}
+              <div style={{ marginTop: 24, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {!prog[topic.id] ? (
+                  <button onClick={() => setProg(p => ({ ...p, [topic.id]: true }))} style={{ ...btnStyle, background: "#34d399", color: "#000" }}>\u2705 Mark Complete</button>
+                ) : (
+                  <span style={{ display: "inline-block", padding: "8px 16px", borderRadius: 16, fontSize: 12, fontWeight: 600, background: "#34d39918", color: "#34d399" }}>\u2705 Completed</span>
+                )}
+                {topicIdx < L.length - 1 && (
+                  <button onClick={() => { setTopicIdx(topicIdx + 1); setShowQuiz(false); setAns({}); setSubmitted(false); }} style={{ ...btnStyle, background: c + "20", color: c }}>Next \u2192</button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div>
+              {topic.quiz.map((q, qi) => {
+                const sel = ans[qi];
+                const isRight = submitted && sel === q.a;
+                const isWrong = submitted && sel !== undefined && sel !== q.a;
+                return (
+                  <div key={qi} style={{ ...cardStyle, cursor: "default", borderColor: isRight ? "#34d39930" : isWrong ? "#f8717130" : "rgba(255,255,255,0.04)" }}>
+                    <p style={{ margin: "0 0 12px", fontWeight: 700, fontSize: 14, color: "#e8ecf4" }}>Q{qi + 1}: {q.q}</p>
+                    {q.o.map((opt, oi) => {
+                      const isSel = sel === oi;
+                      const green = submitted && oi === q.a;
+                      const red = submitted && isSel && oi !== q.a;
+                      return (
+                        <button key={oi} onClick={() => !submitted && setAns(p => ({ ...p, [qi]: oi }))}
+                          style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 16px", marginBottom: 6, borderRadius: 10,
+                            border: "1px solid " + (green ? "#34d39930" : red ? "#f8717130" : isSel ? c + "30" : "transparent"),
+                            background: green ? "#34d39912" : red ? "#f8717112" : isSel ? c + "12" : "rgba(255,255,255,0.02)",
+                            color: green ? "#34d399" : red ? "#f87171" : isSel ? c : "#e8ecf4",
+                            cursor: submitted ? "default" : "pointer", fontWeight: 500, fontSize: 13 }}>
+                          {String.fromCharCode(65 + oi)}. {opt}{green ? " \u2705" : ""}{red ? " \u274c" : ""}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+              {!submitted ? (
+                <button onClick={() => setSubmitted(true)} disabled={Object.keys(ans).length !== topic.quiz.length}
+                  style={{ ...btnStyle, width: "100%", padding: 13, fontSize: 15, background: c, color: "#fff", opacity: Object.keys(ans).length === topic.quiz.length ? 1 : 0.4 }}>Submit Answers</button>
+              ) : (
+                <div style={{ ...cardStyle, cursor: "default", textAlign: "center" }}>
+                  <div style={{ fontSize: 36 }}>{score === topic.quiz.length ? "\ud83c\udf89" : "\ud83d\udcda"}</div>
+                  <h3 style={{ margin: "6px 0", color: "#e8ecf4" }}>Score: {score}/{topic.quiz.length}</h3>
+                  <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 10 }}>
+                    <button onClick={() => { setAns({}); setSubmitted(false); }} style={{ ...btnStyle, background: c + "20", color: c }}>Retry</button>
+                    {topicIdx < L.length - 1 && <button onClick={() => { setTopicIdx(topicIdx + 1); setShowQuiz(false); setAns({}); setSubmitted(false); }} style={{ ...btnStyle, background: c, color: "#fff" }}>Next \u2192</button>}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:2px}button:hover{filter:brightness(1.08)}button:active{transform:scale(.98)}`}</style>
+      </div>
+    );
+  }
+
+  // ━━━ INTERVIEW VIEW ━━━
+  if (view === "interview" && COURSE.interview) {
+    const q = COURSE.interview[intIdx];
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(10,14,26,0.92)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 48, backdropFilter: "blur(16px)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: "#e8ecf4", cursor: "pointer", fontSize: 18 }}>\u2190</button>
+            <span style={{ fontWeight: 800, fontSize: 13, color: "#a78bfa" }}>\ud83c\udf99\ufe0f Interview Prep</span>
+          </div>
+          <span style={{ fontSize: 11, color: "#5a6478" }}>{intIdx + 1}/{COURSE.interview.length}</span>
+        </nav>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "16px 14px 60px" }}>
+          <ProgressBar p={(intIdx + 1) / COURSE.interview.length * 100} h={4} />
+          <div style={{ ...cardStyle, marginTop: 14, cursor: "default" }}>
+            <p style={{ fontSize: 10, color: "#5a6478", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 6px" }}>Interviewer asks:</p>
+            <h3 style={{ margin: 0, fontSize: 18, lineHeight: 1.5, color: "#e8ecf4" }}>"{q.q}"</h3>
+          </div>
+          {!intShow ? (
+            <button onClick={() => setIntShow(true)} style={{ ...btnStyle, width: "100%", padding: 13, fontSize: 15, background: "linear-gradient(135deg, #7c3aed, #ec4899)", color: "#fff", marginTop: 8 }}>\ud83d\udca1 Reveal Model Answer</button>
+          ) : (
+            <div style={{ ...cardStyle, marginTop: 8, cursor: "default", borderColor: "#7c3aed25" }}>
+              <p style={{ fontSize: 10, color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 8px" }}>Model Answer:</p>
+              {renderText(q.a)}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
+            <button onClick={() => { setIntIdx(i => i - 1); setIntShow(false); }} disabled={intIdx === 0} style={{ ...btnStyle, flex: 1, background: "rgba(255,255,255,0.04)", color: "#e8ecf4", opacity: intIdx === 0 ? 0.3 : 1 }}>\u2190 Prev</button>
+            <button onClick={() => { setIntIdx(i => i + 1); setIntShow(false); }} disabled={intIdx === COURSE.interview.length - 1} style={{ ...btnStyle, flex: 1, background: c, color: "#fff", opacity: intIdx === COURSE.interview.length - 1 ? 0.3 : 1 }}>Next \u2192</button>
+          </div>
+        </div>
+        <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:2px}button:hover{filter:brightness(1.08)}button:active{transform:scale(.98)}`}</style>
+      </div>
+    );
+  }
+
+  // ━━━ CAREER VIEW ━━━
+  if (view === "career") {
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(10,14,26,0.92)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "0 16px", display: "flex", alignItems: "center", height: 48, gap: 8, backdropFilter: "blur(16px)" }}>
+          <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: "#e8ecf4", cursor: "pointer", fontSize: 18 }}>\u2190</button>
+          <span style={{ fontWeight: 800, fontSize: 13, color: "#34d399" }}>\ud83d\udcbc Career Guide</span>
+        </nav>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "16px 14px 60px" }}>
+          {COURSE.roles && (
+            <div style={{ ...cardStyle, cursor: "default" }}>
+              <h3 style={{ margin: "0 0 12px", fontSize: 17, color: "#34d399" }}>\ud83d\udcbc Roles After This Certification</h3>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {COURSE.roles.map((r, i) => <span key={i} style={{ display: "inline-block", padding: "6px 14px", borderRadius: 18, fontSize: 12, fontWeight: 600, background: "#34d39912", color: "#34d399" }}>{r}</span>)}
+              </div>
+            </div>
+          )}
+          {COURSE.resume && (
+            <div style={{ ...cardStyle, cursor: "default" }}>
+              <h3 style={{ margin: "0 0 12px", fontSize: 17, color: c }}>\ud83d\udcc4 Resume Bullet Points</h3>
+              {COURSE.resume.map((b, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                  <span style={{ color: c, fontSize: 14, marginTop: 3, flexShrink: 0 }}>\u25cf</span>
+                  <p style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: "#e8ecf4" }}>{b}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:2px}button:hover{filter:brightness(1.08)}button:active{transform:scale(.98)}`}</style>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(AZ900App));
+</script>
+</body>
+</html>

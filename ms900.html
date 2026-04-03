@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Tutor Ram - MS-900: Microsoft 365 Fundamentals</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js"></script>
+<style>body{margin:0;padding:0;background:#0a0e1a}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+
+
+/* ════════════════════════════════════════════════════════
+   SMART TUTOR RAM — MS-900: Microsoft 365 Fundamentals
+   Complete Course by Ram Mohan Pathak
+   100% Free • No API • Works Offline
+   ════════════════════════════════════════════════════════ */
+
+const COURSE = {
+  title: "MS-900: Microsoft 365 Fundamentals",
+  icon: "\u{1F4D8}",
+  color: "#D83B01",
+  desc: "Complete course covering cloud concepts, M365 services, security, compliance, and licensing.",
+  roles: ["M365 Support Engineer","Help Desk Analyst","Cloud Support Specialist","Jr. Systems Admin","Modern Workplace Consultant","M365 Collaboration Specialist","IT Operations Analyst","Cloud Operations Analyst"],
+  resume: [
+    "Administered Microsoft 365 tenant including Exchange Online, SharePoint, Teams, and OneDrive for 500+ users",
+    "Managed M365 licensing optimization across Business, Enterprise, and Frontline plans saving $200K+ annually",
+    "Implemented M365 security stack: Defender for Office 365, DLP, Sensitivity Labels, Conditional Access",
+    "Configured Microsoft Teams governance: naming conventions, expiration policies, guest access controls",
+    "Deployed Microsoft Viva suite improving employee engagement and reducing onboarding time by 40%",
+    "Managed compliance using Compliance Manager, eDiscovery, retention policies for GDPR/HIPAA readiness",
+    "Administered Power Platform governance: DLP policies, environment management, CoE monitoring",
+    "Configured Exchange Online security: Safe Attachments, Safe Links, anti-phishing, SPF/DKIM/DMARC"
+  ],
+  interview: [
+    {q:"What is Microsoft 365 and how does it differ from Office 365?",a:"Microsoft 365 combines three pillars: Office productivity apps (Word, Excel, PowerPoint, Outlook), cloud services (Exchange Online, SharePoint, OneDrive, Teams), and enterprise security (Defender, DLP, Sensitivity Labels, Compliance Manager).\n\nOffice 365 includes only the cloud services and apps. Microsoft 365 adds Windows 11 Enterprise licensing, Enterprise Mobility + Security (Intune for device management and Azure AD Premium), and advanced security. M365 is the complete modern workplace package."},
+    {q:"How would you optimize M365 licensing for 2000 employees?",a:"Start by auditing current usage with license utilization reports in the admin center. Then match plans to personas:\n\nFrontline workers (retail, factory): F1 or F3 plans at $2.25-$8/month\nStandard information workers: E3 at $36/month for full Office + compliance\nSecurity/IT/executives: E5 at $57/month for advanced security + Phone System\n\nAnnual commitment saves 15-20% over monthly. FastTrack is free with 150+ licenses. Real example: mixing plans saved a 2000-person company $655K annually vs all-E5."},
+    {q:"Explain your approach to securing a new M365 tenant.",a:"Priority-based approach:\n\nWeek 1 (Critical): Check Secure Score baseline, enable MFA for all users, block legacy authentication (IMAP, POP3), enable unified audit logging.\n\nMonth 1: Configure Conditional Access policies, enable DLP for sensitive data types, deploy Sensitivity Labels for document classification.\n\nMonth 2-3: Configure Defender for Office 365 (Safe Attachments, Safe Links, anti-phishing), run Attack Simulation Training, implement information barriers.\n\nOngoing: Regular Secure Score reviews targeting 80%+, quarterly access reviews, annual security assessment."},
+    {q:"What is Microsoft Copilot for M365?",a:"Copilot is an AI assistant embedded in every M365 app using Microsoft Graph data. In Word it drafts documents, in Excel it analyzes data, in PowerPoint it creates presentations, in Teams it summarizes meetings.\n\nRequirements: E3/E5 or Business Standard/Premium base license plus $30/user/month Copilot add-on. Enterprise-grade: data stays in your tenant, never used for model training. Before deployment, ensure Sensitivity Labels and DLP are configured since Copilot surfaces any content the user can access."},
+    {q:"How would you handle a data breach in M365?",a:"Immediate containment: Block compromised accounts, revoke all active sessions, reset passwords.\n\nInvestigation: Review audit logs in Compliance Center, use eDiscovery for content search, check Defender incident details, review sign-in logs for scope.\n\nRemediation: Patch the vulnerability, reset affected credentials, update security policies.\n\nNotification: Per GDPR (72 hours) or HIPAA requirements, notify affected parties and regulators.\n\nImprovement: Gap analysis, policy updates, enhanced monitoring, user security training."},
+    {q:"Explain Microsoft Viva and its business value.",a:"Viva is an employee experience platform inside Teams with six modules:\n\nViva Insights: Tracks work patterns, identifies burnout risk, suggests focus time.\nViva Learning: Centralized learning hub aggregating LinkedIn Learning, Coursera, and custom content.\nViva Connections: Brings SharePoint intranet into Teams with personalized dashboard.\nViva Topics: AI discovers and organizes company knowledge automatically.\nViva Goals: OKR tracking aligned from individual to company level.\nViva Engage: Enterprise social networking for communities and leadership communication.\n\nMeasurable impact: improved engagement, reduced burnout, faster onboarding, better knowledge sharing."},
+    {q:"Teams governance for a large enterprise?",a:"Naming conventions enforced via policy (Dept-ProjectName format). Expiration policy auto-deletes inactive teams after 180 days. Guest access restricted with MFA and limited to specific teams. Sensitivity Labels on teams control sharing and guest policies. App permission policies whitelist approved third-party apps only. Team creation restricted to trained champions. Templates standardize team structures for common scenarios."}
+  ]
+};
+
+const L = [
+// ─── MODULE 1: CLOUD CONCEPTS ───
+{mod:"Cloud Concepts",id:"m1t1",title:"What is Cloud Computing?",
+content:`Imagine you're starting a new company today. You need email for 50 employees, a place to store documents, video conferencing, and a website. Twenty years ago, you'd need to buy physical servers ($10,000-$50,000), hire IT staff to set them up (2-4 weeks), rent server room space, pay for electricity, cooling, and internet — and then maintain it all forever.
+
+Cloud computing changed everything. Instead of buying and maintaining your own infrastructure, you rent computing power from companies like Microsoft (Azure), Amazon (AWS), or Google (GCP). It's exactly like electricity — before power grids, every factory built its own generator. Now you just plug into the grid and pay for what you use.
+
+**The Five Essential Characteristics (NIST Definition):**
+
+**1. On-Demand Self-Service**
+You can provision resources instantly through a web portal — no phone calls, no purchase orders, no waiting. Need a new server? Click a few buttons and it's running in 5 minutes. Need to delete it? One click. This speed is revolutionary compared to the weeks it takes to buy and set up physical hardware.
+
+**2. Broad Network Access**
+Access your resources from anywhere — laptop, phone, tablet, any browser. Your data and applications are always available whether you're in the office, at home, or on a plane with Wi-Fi. This is what makes remote work possible.
+
+**3. Resource Pooling**
+Multiple customers share the same physical hardware, but each is completely isolated from others. Think of it like apartments in a building — everyone shares the building's structure, plumbing, and electricity, but your apartment is private. This sharing makes cloud computing much cheaper than everyone buying their own hardware.
+
+**4. Rapid Elasticity**
+Scale up or down instantly based on demand. Running an e-commerce site? During normal days, you run 2 servers. Black Friday hits and traffic spikes 100x? Automatically scale to 200 servers. Monday comes and traffic drops? Scale back to 2. You only pay for what you use during each period.
+
+**5. Measured Service**
+Pay only for what you consume — like a utility bill. Used 100 hours of compute time? Pay for 100 hours. Stored 500 GB of data? Pay for 500 GB. This is called the "pay-as-you-go" model.
+
+**CapEx vs OpEx — The Financial Shift:**
+
+**Capital Expenditure (CapEx):** Buying a server for $20,000 that you depreciate over 5 years. The money is spent upfront. The server sits there whether you use it at 5% or 100% capacity. If you outgrow it, you buy another one.
+
+**Operational Expenditure (OpEx):** Renting cloud resources for $500/month. No upfront cost. Stop using it? Stop paying. Need more? Add more. Need less? Remove some. Cloud shifts IT spending from CapEx to OpEx, which gives businesses much more flexibility.
+
+**Real-World Corporate Scenario:**
+A startup founder needs a website and backend for their new product. 
+
+Traditional approach: Buy servers ($15,000), hire a system admin ($80,000/year), set up networking (2 weeks), install and configure software (1 week), set up backup (1 week). Total time: 1 month. Total first-year cost: $95,000+.
+
+Cloud approach: Create an Azure App Service (5 minutes), deploy code (10 minutes), turn on auto-scaling (2 minutes). Total time: 20 minutes. Monthly cost: $50-200. When the product goes viral, it auto-scales to handle millions of users without any intervention.
+
+**Interview Tip:**
+"Cloud computing is the delivery of computing services — servers, storage, databases, networking, software — over the internet on a pay-as-you-go model. The key benefits are shifting from capital expenditure to operational expenditure, global scalability, high availability through redundancy, rapid provisioning, and leveraging the cloud provider's massive security investments. Microsoft alone invests over $1 billion per year in security for Azure and M365."`,
+quiz:[
+{q:"Which of these is NOT one of the five NIST characteristics of cloud computing?",o:["On-demand self-service","Broad network access","Requires physical access to the data center","Rapid elasticity"],a:2},
+{q:"What does the shift from CapEx to OpEx mean for a business?",o:["They must buy hardware upfront","They rent resources and pay monthly with no upfront cost","Cloud is always more expensive","They need bigger IT teams"],a:1},
+{q:"A company's website traffic spikes 10x during a sale and then returns to normal. Which cloud characteristic handles this?",o:["Resource pooling","Measured service","Rapid elasticity","Broad network access"],a:2},
+{q:"What does 'measured service' mean in cloud computing?",o:["You measure your server room temperature","You pay only for resources you actually consume","All services are metered by speed","You must measure bandwidth manually"],a:1}
+]},
+
+{mod:"Cloud Concepts",id:"m1t2",title:"IaaS, PaaS, SaaS & Serverless",
+content:`Now that you understand cloud computing, let's learn the different ways you can use it. There are three main service models, and each one determines how much YOU manage versus how much the CLOUD PROVIDER manages. Think of it like the pizza analogy:
+
+**Making Pizza at Home (On-Premises / Traditional IT):**
+You buy the ingredients, make the dough, make the sauce, grate the cheese, heat the oven, bake the pizza, set the table, and clean up. You control everything, but you do ALL the work. This is like running your own data center — you buy servers, install operating systems, manage networking, deploy applications, handle security patches, run backups — everything.
+
+**IaaS — Infrastructure as a Service (Take & Bake Pizza):**
+The store gives you raw ingredients and an oven. You still prepare and cook, but you didn't have to build the oven or grow the wheat.
+
+In cloud terms: Microsoft provides virtual machines, storage, and networking. YOU still install the operating system, configure it, install your software, manage security patches, and handle backups. You have full control but significant responsibility.
+
+**Azure Examples:** Azure Virtual Machines, Azure Storage, Azure Virtual Networks
+**Real-World Use:** "We have a 15-year-old Windows application that runs on Windows Server 2019. We need to move it to the cloud quickly without rewriting any code." → Lift-and-shift to an Azure VM. The app runs exactly the same, just on a cloud VM instead of a physical server.
+
+**PaaS — Platform as a Service (Pizza Delivery with Custom Toppings):**
+You choose your toppings and they handle everything else — the dough, sauce, cooking, and delivery. You focus only on what makes YOUR pizza unique.
+
+In cloud terms: Microsoft manages the operating system, runtime, middleware, and infrastructure. YOU only manage your application code and your data. No patching servers, no configuring firewalls — just deploy your code and it runs.
+
+**Azure Examples:** Azure App Service, Azure SQL Database, Azure Functions
+**Real-World Use:** "Our development team wants to build a new web application. We don't want to manage servers." → Deploy to Azure App Service. Push your code, and it runs. Auto-scaling, SSL certificates, and patching are all handled for you.
+
+**SaaS — Software as a Service (Eating at a Restaurant):**
+You walk in, sit down, order, and eat. The restaurant handles everything — ingredients, cooking, serving, cleaning. You just enjoy the food.
+
+In cloud terms: The provider manages EVERYTHING — infrastructure, platform, and the application itself. You just use the software and manage your data and user access.
+
+**Examples:** Microsoft 365, Salesforce, Dropbox, Gmail
+**Real-World Use:** "We need email and collaboration tools for 500 employees." → Subscribe to Microsoft 365. Email (Exchange Online), file storage (OneDrive/SharePoint), chat (Teams) — all ready to use immediately with zero infrastructure to manage.
+
+**Serverless — Pay Per Bite:**
+The most extreme form of PaaS. You don't even think about servers. You write a small piece of code (a "function"), and it runs ONLY when triggered. If nobody triggers it, you pay absolutely nothing. If it's triggered a million times, it scales automatically.
+
+**Azure Example:** Azure Functions
+**Real-World Use:** "Every time a customer uploads a profile photo, we need to resize it to three different dimensions." → Write an Azure Function triggered by blob upload. It runs only when photos are uploaded. Costs: fractions of a penny per execution.
+
+**The Shared Responsibility Model:**
+This is CRITICAL for the exam. Security responsibility is always SHARED between you and Microsoft, but the split changes based on the service model:
+
+In IaaS: Microsoft secures the physical infrastructure. YOU secure the OS, network configuration, applications, and data.
+In PaaS: Microsoft also secures the OS and runtime. YOU secure applications, data, and access.
+In SaaS: Microsoft secures almost everything. YOU secure your data, user accounts, and devices.
+
+REGARDLESS of the model, YOU are ALWAYS responsible for: your data, your endpoints (devices), your user accounts, and access management. Never forget this — it's a common exam question.
+
+**Real-World Corporate Scenario:**
+A company has a legacy .NET application running on Windows Server in their office closet. The CTO wants to modernize:
+
+Phase 1 (Quick Win): Lift-and-shift to an Azure VM (IaaS). The app works exactly the same, but now it's in a real data center with backup, monitoring, and 99.9% SLA. Timeline: 1 week.
+
+Phase 2 (Modernize): Refactor the app to run on Azure App Service (PaaS). Remove the need to manage the OS entirely. Add deployment slots for zero-downtime updates. Timeline: 1-2 months.
+
+Phase 3 (Optimize): Break out background processing into Azure Functions (Serverless). Only pay when functions actually run. Add Azure SQL Database (PaaS) to replace the self-managed SQL Server. Timeline: 2-3 months.
+
+Each step reduces the management burden and cost while increasing reliability.
+
+**Interview Tip:**
+"I'd recommend the service model based on the use case. For legacy applications that can't be modified, IaaS with Azure VMs provides a quick lift-and-shift path. For new web application development, PaaS with Azure App Service eliminates infrastructure management. For event-driven tasks like file processing or notifications, Serverless with Azure Functions provides pay-per-execution pricing and auto-scaling. I always consider the shared responsibility model to ensure we're meeting our security obligations at each layer."`,
+quiz:[
+{q:"Azure Virtual Machines is an example of which service model?",o:["SaaS","PaaS","IaaS","Serverless"],a:2},
+{q:"In PaaS, who is responsible for managing the operating system?",o:["The customer","The cloud provider","A third-party vendor","Nobody — it manages itself"],a:1},
+{q:"Which of these is the customer's responsibility in ALL service models?",o:["Physical security of data centers","Operating system patches","Data and access management","Network hardware"],a:2},
+{q:"A developer wants to run code only when a file is uploaded, paying nothing when idle. Which model?",o:["IaaS","PaaS","SaaS","Serverless"],a:3},
+{q:"Microsoft 365 is an example of?",o:["IaaS","PaaS","SaaS","On-premises"],a:2}
+]},
+
+{mod:"Cloud Concepts",id:"m1t3",title:"Public, Private, Hybrid & Multi-Cloud",
+content:`Now you know WHAT cloud computing is and HOW you use it (IaaS/PaaS/SaaS). The next question is: WHERE does the cloud run? This is about deployment models.
+
+**Public Cloud — The Apartment Building**
+A public cloud is shared infrastructure owned and operated by a cloud provider like Microsoft, Amazon, or Google. Multiple organizations ("tenants") share the same physical hardware, but each is completely isolated from the others.
+
+Think of it like living in an apartment building. The landlord (Microsoft) builds and maintains the building. You rent an apartment (your cloud resources). You share the building with other tenants, but your apartment is private and locked. The landlord handles repairs, security cameras, heating, and plumbing.
+
+**Advantages:** Lowest cost (economies of scale), instant provisioning, global availability, no maintenance burden
+**Disadvantages:** Less control over infrastructure, shared with others (though isolated), data sovereignty concerns for some industries
+**Examples:** Microsoft Azure, Amazon AWS, Google Cloud Platform
+**Best for:** Most workloads — web apps, mobile backends, dev/test, analytics, AI/ML
+
+**Private Cloud — Your Own House**
+A private cloud is dedicated infrastructure used by a single organization. It can be hosted in your own data center or by a third party, but it's exclusively yours.
+
+Like owning your own house — you control everything, but you also pay for everything and maintain everything. More expensive but complete control.
+
+**Advantages:** Maximum control, dedicated resources, meets strict compliance requirements
+**Disadvantages:** Highest cost, you maintain everything, limited scalability compared to public cloud
+**Examples:** Azure Stack (run Azure in YOUR data center), VMware private cloud
+**Best for:** Banks with strict regulations, government agencies, healthcare with HIPAA data that must stay on specific hardware
+
+**Hybrid Cloud — House + Apartment (MOST COMMON!)**
+A hybrid cloud combines both public and private clouds, allowing data and applications to be shared between them. This is the model used by 90%+ of enterprises today.
+
+Like having a house AND an apartment — keep your valuables (sensitive data) at home, use the apartment (public cloud) for everything else. Best of both worlds.
+
+**Advantages:** Flexibility, keep sensitive workloads on-prem while leveraging cloud scalability, gradual migration path
+**Disadvantages:** More complex to manage, requires connectivity between environments
+**Examples:** On-premises Active Directory synced with Azure AD via Azure AD Connect, Azure Arc managing on-prem servers
+**Best for:** Almost every enterprise! Companies with existing on-prem investments who want to gradually adopt cloud
+
+**Multi-Cloud — Multiple Apartments in Different Buildings**
+Using two or more public cloud providers simultaneously. For example, running some workloads on Azure and others on AWS.
+
+**Advantages:** Avoid vendor lock-in, use best-of-breed services from each provider, redundancy across providers
+**Disadvantages:** Most complex to manage, skills needed for multiple platforms, data transfer costs
+**Tool:** Azure Arc can manage resources across Azure, AWS, GCP, and on-premises from a single Azure portal
+
+**Real-World Corporate Scenario:**
+You're the IT director at a hospital with 2,000 employees:
+
+The hospital currently runs everything on-premises: email server (Exchange), file server, electronic health records (EHR), and their public website.
+
+After analysis, you recommend a hybrid cloud strategy:
+- **Patient records (EHR)** → Stay on-premises in the private cloud (HIPAA requires physical control of certain data)
+- **Email** → Migrate to Exchange Online in Microsoft 365 (public cloud — Microsoft is HIPAA compliant with BAA)
+- **Hospital website** → Move to Azure App Service (public cloud — needs to scale during flu season)
+- **Active Directory** → Hybrid with Azure AD Connect (on-prem AD synced to Azure AD for SSO)
+- **Backup** → Azure Backup (public cloud — off-site backup for disaster recovery)
+- **Connection** → Azure ExpressRoute (private, dedicated connection between hospital and Azure — not over the internet)
+
+This is hybrid cloud in action — some workloads on-premises, some in the cloud, all connected securely.
+
+**Azure Arc — Managing Everything from One Place:**
+Azure Arc is Microsoft's answer to hybrid and multi-cloud complexity. It lets you manage resources that are OUTSIDE of Azure — on-premises servers, AWS VMs, GCP instances — all from the Azure portal. You can apply Azure Policy, RBAC, and monitoring to servers running anywhere.
+
+Think of it as extending Azure's management capabilities to your entire IT estate, regardless of where it runs.
+
+**Interview Tip:**
+"Most enterprises use hybrid cloud because they have existing on-premises investments, compliance requirements for specific data, and a desire for gradual cloud migration. I'd recommend Azure AD Connect for hybrid identity, Azure Arc for unified management across hybrid and multi-cloud environments, and Azure ExpressRoute for secure, high-bandwidth connectivity between on-premises and Azure. The key is building a roadmap that migrates workloads to the cloud in phases while maintaining business continuity."`,
+quiz:[
+{q:"Which cloud deployment model is most commonly used by large enterprises?",o:["Public cloud only","Private cloud only","Hybrid cloud","Community cloud"],a:2},
+{q:"A hospital keeps patient records on-premises but hosts their website on Azure. This is:",o:["Public cloud","Private cloud","Hybrid cloud","Multi-cloud"],a:2},
+{q:"Azure Arc allows you to:",o:["Only manage Azure resources","Manage on-prem and multi-cloud resources from Azure","Replace on-premises servers","Only manage networking"],a:1},
+{q:"Azure Stack enables which cloud model?",o:["Public cloud only","Private/Hybrid (run Azure in your own data center)","SaaS only","Multi-cloud only"],a:1}
+]},
+
+// ─── MODULE 2: MICROSOFT 365 SERVICES ───
+{mod:"Microsoft 365 Services",id:"m2t1",title:"What is Microsoft 365?",
+content:`Let's get straight to the heart of this certification. Microsoft 365 is the product that powers modern work for over 400 million users worldwide. Understanding it inside and out is your foundation for this exam and your career.
+
+**Microsoft 365 is three things bundled into one subscription:**
+
+**Pillar 1 — Productivity Applications**
+These are the apps you already know: Word, Excel, PowerPoint, Outlook, OneNote, Access (Windows only), and Publisher (Windows only). But unlike the old perpetual licenses (Office 2019, Office 2021), Microsoft 365 apps are subscription-based and always updating. Every month, you get new features automatically. You can install them on up to 5 devices per user — PC, Mac, tablet, and phone.
+
+The apps work in three modes: desktop applications (full-featured, installed on your computer), web applications (access from any browser at office.com), and mobile applications (iOS and Android). The same document looks the same in all three — this is critical for remote and hybrid work.
+
+**Pillar 2 — Cloud Services**
+This is where the real power lives. These are enterprise-grade services running in Microsoft's global data centers:
+
+**Exchange Online** — Enterprise email and calendar. Every user gets a 50 GB mailbox (100 GB with E3/E5). It includes shared mailboxes (like info@company.com — completely free under 50 GB!), resource mailboxes for booking conference rooms and equipment, distribution groups for mailing lists, and Microsoft 365 groups that integrate with Teams.
+
+**SharePoint Online** — Two personalities in one service. First, it's a document management system — think of it as a super-powered file server with version control (keeps up to 500 versions of every file), co-authoring (multiple people edit the same document simultaneously), metadata columns, content types, and incredibly powerful search. Second, it's an intranet platform — you can build beautiful company websites, news feeds, and department portals.
+
+**OneDrive for Business** — Personal cloud storage for every user. Each person gets 1 TB (yes, 1,000 GB). It syncs to their PC or Mac, so files are available offline. The "Known Folder Move" (KFM) feature automatically redirects Desktop, Documents, and Pictures folders to OneDrive — if the laptop dies, nothing is lost. OneDrive also has ransomware recovery — you can restore your entire library to any point in the last 30 days.
+
+**Microsoft Teams** — The hub for teamwork. Chat, video meetings (up to 10,000 in Town Halls), file sharing, and app integrations — all in one place. Teams replaced Skype for Business and has become the central nervous system of the modern workplace. Behind the scenes, Teams files are stored in SharePoint, Teams calendar uses Exchange, and identity runs through Azure AD.
+
+**Yammer / Viva Engage** — Enterprise social networking. Think of it as a company-wide Facebook where leadership posts updates, employees ask questions, and communities form around interests.
+
+**Microsoft Stream** — Video portal for the organization. Record Teams meetings, upload training videos, create video channels for departments.
+
+**Power Platform** — A suite of no-code/low-code tools: Power BI (data visualization and dashboards), Power Apps (build mobile/web apps without coding), Power Automate (workflow automation), and Copilot Studio (build chatbots).
+
+**Pillar 3 — Enterprise Security**
+Microsoft Defender for Office 365 protects email from phishing, malware, and impersonation attacks. Data Loss Prevention (DLP) automatically detects and blocks sensitive data (credit card numbers, Social Security numbers) from being shared inappropriately. Sensitivity Labels classify and protect documents with encryption, watermarks, and access restrictions. Compliance Manager helps track regulatory compliance (GDPR, HIPAA, SOX).
+
+**The Critical Difference: Office 365 vs Microsoft 365**
+This comes up on almost every exam. Office 365 = cloud services + apps. Microsoft 365 = Office 365 + Windows 11 Enterprise + Enterprise Mobility + Security (EMS, which includes Intune and Azure AD Premium). Microsoft 365 is the complete package.
+
+Think of it this way: Office 365 gives you the tools to work. Microsoft 365 gives you the tools to work PLUS the ability to manage devices (Intune), protect identities (Azure AD Premium), and upgrade Windows (Windows 11 Enterprise licensing).
+
+**Real-World Corporate Scenario:**
+A law firm with 200 employees was running: on-premises Exchange Server 2016 (email), Windows File Server (shared documents), Skype for Business (meetings), Symantec Endpoint Protection (antivirus), Veritas Backup Exec (backup), and buying Office 2019 perpetual licenses ($250/user).
+
+Total annual IT cost: $450,000 including 5 IT staff.
+
+After migrating to Microsoft 365 Business Premium ($22/user/month = $52,800/year):
+- Exchange Online replaced the email server
+- SharePoint and OneDrive replaced the file server
+- Teams replaced Skype for Business
+- Defender for Office 365 replaced Symantec
+- Azure Backup replaced Veritas
+- No more perpetual Office licenses — always updated
+
+New annual IT cost: $270,000 with 2 IT staff. Annual savings: $180,000. When COVID-19 hit, employees were working remotely from day one because everything was already in the cloud. Firms that were still on-premises scrambled for weeks.
+
+**Interview Tip:**
+"Microsoft 365 is a cloud-based productivity platform that combines Office applications, cloud services like Exchange Online and SharePoint, and enterprise-grade security. It enables modern work scenarios including remote collaboration, Zero Trust security, and unified endpoint management — all managed from a single admin center at admin.microsoft.com. The key differentiator from Office 365 is the addition of Windows 11 licensing, Intune for device management, and Azure AD Premium for advanced identity features."`,
+quiz:[
+{q:"Microsoft 365 combines which three pillars?",o:["Only Office apps + email","Office apps + Cloud services + Security","Cloud storage + networking + servers","Windows + Linux + macOS"],a:1},
+{q:"What is the key difference between Office 365 and Microsoft 365?",o:["They are exactly the same thing","M365 adds Windows 11 + EMS (Intune, Azure AD Premium)","O365 is newer and better","M365 is cheaper"],a:1},
+{q:"Exchange Online provides:",o:["File storage and sharing","Enterprise email, calendar, and contacts","Video conferencing only","Project management tools"],a:1},
+{q:"How much OneDrive storage does each user get?",o:["5 GB","100 GB","1 TB","Unlimited"],a:2},
+{q:"Where are files stored when shared in a Teams channel?",o:["In Microsoft Teams servers","In SharePoint Online","In OneDrive personal storage","In Azure Blob Storage"],a:1}
+]},
+
+{mod:"Microsoft 365 Services",id:"m2t2",title:"M365 Subscription Plans — Complete Guide",
+content:`Choosing the right Microsoft 365 plan is one of the most important decisions for any organization. Let's break down EVERY plan so you can confidently recommend the right one.
+
+**BUSINESS PLANS (for organizations with up to 300 users):**
+
+**Microsoft 365 Business Basic — ~$6 per user/month**
+What you get: Web and mobile versions of Office apps (no desktop installation), Exchange Online (50 GB mailbox), SharePoint Online, OneDrive (1 TB per user), Microsoft Teams (chat, meetings, video), and Microsoft Bookings.
+
+What you DON'T get: Desktop Office applications. Users must use the web browser or mobile app versions.
+
+Best for: Small businesses where employees primarily work in browsers. A 20-person marketing agency that uses Google Chrome for everything would work perfectly with this plan.
+
+**Microsoft 365 Business Standard — ~$12.50 per user/month**
+Everything in Business Basic PLUS: Full desktop Office applications (Word, Excel, PowerPoint, Outlook installed on your computer), Microsoft Bookings, Microsoft Forms, Microsoft Planner, and Power Automate for workflow automation.
+
+Best for: Small businesses that need the full desktop Office experience. A 50-person accounting firm that uses complex Excel spreadsheets needs the desktop version — the web version can't handle heavy workbooks.
+
+**Microsoft 365 Business Premium — ~$22 per user/month**
+Everything in Business Standard PLUS advanced security: Microsoft Intune (cloud device management), Azure Active Directory Premium P1 (Conditional Access policies), Microsoft Defender for Office 365 (Safe Attachments, Safe Links, anti-phishing), Azure Information Protection, and remote wipe capabilities.
+
+This is a HUGE jump in security for just $10 more than Standard. Best for: Any small business that handles sensitive data. A 100-person healthcare clinic dealing with HIPAA patient data should absolutely use this plan.
+
+**ENTERPRISE PLANS (unlimited users):**
+
+**Microsoft 365 E1 — ~$10 per user/month**
+Web and mobile Office apps (no desktop), Exchange Online, SharePoint, OneDrive (1 TB), Teams, and basic compliance features. Similar to Business Basic but without the 300-user limit and with enterprise compliance tools.
+
+**Microsoft 365 E3 — ~$36 per user/month**
+The enterprise workhorse. Everything in E1 PLUS: Full desktop Office apps, Windows 11 Enterprise upgrade rights, Azure AD Premium P1, Advanced compliance tools (eDiscovery, DLP, retention policies), Information Protection, and 100 GB mailboxes.
+
+This is the standard choice for large organizations. It covers productivity, compliance, and basic security needs.
+
+**Microsoft 365 E5 — ~$57 per user/month**
+The premium everything plan. Everything in E3 PLUS: Microsoft Defender for Endpoint (advanced endpoint threat protection), Azure AD Premium P2 (risk-based Conditional Access, Identity Protection, Privileged Identity Management), Microsoft Defender for Office 365 Plan 2, Phone System (replace your PBX with cloud calling), Audio Conferencing (dial-in numbers for meetings), Power BI Pro (business intelligence), Advanced eDiscovery, Advanced Compliance (communication compliance, information barriers, insider risk management).
+
+Best for: Organizations requiring the highest level of security and compliance. Banks, government agencies, healthcare systems, and any company that has experienced or is concerned about sophisticated cyber attacks.
+
+**FRONTLINE WORKER PLANS:**
+
+**Microsoft 365 F1 — ~$2.25 per user/month**
+Web and mobile Office apps, Teams (chat and meetings), SharePoint (read-only), limited Exchange (2 GB mailbox). Designed for shift workers who need basic communication and access to information.
+
+**Microsoft 365 F3 — ~$8 per user/month**
+Everything in F1 PLUS: Desktop Office apps on shared devices, full Exchange (2 GB), Intune, Azure AD P1, and Windows 11 Enterprise. Best for frontline workers who use shared computers at kiosks or nurse stations.
+
+**ADD-ON LICENSES (add to any base plan):**
+- Microsoft 365 Copilot: $30/user/month
+- Power BI Pro: $10/user/month  
+- Visio Plan 2: $15/user/month
+- Project Plan 3: $30/user/month
+- Phone System: $8/user/month
+- Audio Conferencing: $4/user/month
+- Defender for Endpoint P2: $5.20/user/month
+
+**How to Choose — Decision Framework:**
+1. How many users? ≤300 → Business plans. >300 → Enterprise plans.
+2. Need desktop Office apps? No → Basic/E1. Yes → Standard/E3 or higher.
+3. Need device management (Intune)? → Business Premium or E3+.
+4. Need advanced threat protection? → E5 or add Defender separately.
+5. Have frontline/shift workers? → F1 or F3 plans.
+6. Key rule: MIX AND MATCH! Not everyone needs the same plan.
+
+**Real-World Cost Optimization Scenario:**
+A retail company with 2,000 employees was paying for E5 ($57/user) across the board:
+Monthly cost: 2,000 × $57 = $114,000/month = $1,368,000/year
+
+After license optimization:
+- 200 IT/Security/Executives → E5 ($57): Need advanced security + Phone System = $11,400/mo
+- 1,200 office workers → E3 ($36): Need full Office + compliance = $43,200/mo
+- 600 store employees → F3 ($8): Need basic apps on shared devices = $4,800/mo
+
+New monthly cost: $59,400/month = $712,800/year
+**Annual savings: $655,200!**
+
+**Interview Tip:**
+"I evaluate organization size, security requirements, compliance needs, and user personas to recommend the right license mix. Not everyone needs E5 — I use the M365 admin center's license utilization reports to identify unused features and right-size licenses. For cost optimization, I match plans to personas: F-plans for frontline workers, E3 for information workers, and E5 only for users who need advanced security, phone system, or Power BI. Annual commitment saves 15-20% over monthly billing, and FastTrack provides free deployment assistance with 150+ licenses."`,
+quiz:[
+{q:"What is the maximum number of users for Microsoft 365 Business plans?",o:["100","300","500","Unlimited"],a:1},
+{q:"Which plan includes Microsoft Defender for Endpoint?",o:["Business Basic","E3","E5","Business Standard"],a:2},
+{q:"A retail worker at a checkout counter who needs basic Teams and email should get:",o:["E5 ($57/mo)","E3 ($36/mo)","Business Premium ($22/mo)","F1 or F3 ($2.25-$8/mo)"],a:3},
+{q:"Microsoft 365 Copilot is:",o:["Included free in E5","A $30/user/month add-on","Only for Business plans","Part of the F3 plan"],a:1},
+{q:"Azure AD Premium P2 (with Identity Protection and PIM) is included in:",o:["Business Basic","E1","E3","E5"],a:3}
+]},
+
+{mod:"Microsoft 365 Services",id:"m2t3",title:"M365 Admin Center & Admin Roles",
+content:`The Microsoft 365 Admin Center at admin.microsoft.com is your command center for managing everything in your M365 tenant. Let's explore every section and understand the admin roles that control who can do what.
+
+**The Main Admin Center (admin.microsoft.com):**
+
+**Users Section:**
+This is where you manage every person in your organization.
+- **Active Users:** View all users, add new users (one at a time or bulk import via CSV), assign licenses, reset passwords, block/unblock sign-in, delete users, manage roles
+- **Guest Users:** External people (partners, contractors) invited via Azure AD B2B
+- **Deleted Users:** Recently deleted users (recoverable within 30 days!)
+- **Contacts:** External contacts for the global address list (GAL)
+
+**Groups Section:**
+- **Microsoft 365 Groups:** Creates a shared mailbox, SharePoint site, Teams team, Planner plan, and OneNote notebook automatically. This is the backbone of collaboration.
+- **Security Groups:** Used for assigning permissions and access control. No collaboration features — just access management.
+- **Distribution Lists:** Email-only groups. Send one email, it goes to everyone in the list. Legacy feature, being replaced by M365 Groups.
+- **Dynamic Groups:** Membership determined automatically by rules. Example: All users with Department = "Engineering" are automatically members. Leave Engineering? Automatically removed. Requires Azure AD Premium P1.
+
+**Billing Section:**
+- **Your Products:** View all subscriptions, license counts, renewal dates
+- **Purchase Services:** Buy additional licenses or new subscriptions
+- **Bills & Payments:** Invoice history, payment methods
+- **Billing Notifications:** Set up who gets billing emails
+
+**Health Section — Critical for Support!**
+- **Service Health:** Real-time status of ALL M365 services. Is Teams down? Is Exchange having issues? This is your first stop when users report problems. Shows current issues, advisories, and planned maintenance.
+- **Message Center:** Upcoming changes to M365 services. Microsoft gives 30-90 days notice before making changes. Smart admins check this weekly.
+- **Windows Release Health:** Status of Windows updates, known issues
+
+**Settings Section:**
+- **Org Settings:** Company name, address, password policy, release preferences (targeted vs standard release), customer lockbox
+- **Domains:** Manage your custom domains (contoso.com)
+- **Security & Privacy:** MFA setup, self-service password reset, idle session timeout
+
+**Microsoft Copilot Dashboard (NEW):**
+The Copilot Dashboard in the Admin Center shows how Copilot is being used across your organization: adoption metrics (how many users are actively using Copilot), usage patterns (which apps — Word, Excel, Teams — see the most Copilot activity), impact metrics (time saved, documents generated), and readiness assessment (which users have licenses, which don't). This helps justify the $30/user/month investment to leadership with real data.
+
+**Reports Section:**
+Usage reports for all services — how many people actively use Teams, SharePoint, OneDrive, Exchange. Critical for license optimization.
+
+**Microsoft 365 User Portal (for end users, not admins):**
+- **myapps.microsoft.com (My Apps):** Users see all applications they have access to in one place — M365, Salesforce, ServiceNow, custom apps. Single click to launch any app with SSO.
+- **myaccount.microsoft.com (My Account):** Users manage their own profile, security info (MFA methods), devices, privacy settings, and connected organizations. Reduces helpdesk calls.
+- **microsoft365.com (Office.com):** Users access all M365 web apps, recent documents, and shared files.
+
+These self-service portals empower users to manage their own accounts and reduce IT support burden.
+
+**Specialized Admin Centers (accessible from sidebar):**
+From the main admin center, you can navigate to specialized portals:
+- **Exchange Admin Center** → Mail flow rules, mailboxes, anti-spam, connectors, accepted domains
+- **SharePoint Admin Center** → Sites, sharing policies, storage limits, access control
+- **Teams Admin Center** → Meeting policies, calling policies, messaging policies, app permissions
+- **Security Admin Center (security.microsoft.com)** → Defender, threat protection, incidents, secure score
+- **Compliance Admin Center (compliance.microsoft.com)** → DLP, sensitivity labels, retention, eDiscovery, insider risk
+- **Endpoint Manager (Intune)** → Device enrollment, compliance, configuration profiles, apps
+- **Azure AD Admin Center (entra.microsoft.com)** → Users, groups, app registrations, Conditional Access, PIM
+
+**Admin Roles — The Principle of Least Privilege:**
+
+NEVER give everyone Global Admin. This is the #1 mistake in M365 administration. Microsoft recommends having only 2-5 Global Admin accounts, and they should be "break-glass" emergency accounts — not used for daily work.
+
+**Global Administrator:** Full access to EVERYTHING. Can manage all M365 services, assign roles to others, reset any password, read audit logs. Only for emergencies. Keep 2-5 maximum. Use strong MFA and separate accounts from daily work.
+
+**User Administrator:** Create/delete/manage users and groups. Assign licenses. Reset passwords (except for other admins). Good for: HR team member who onboards new employees.
+
+**Exchange Administrator:** Full access to Exchange Admin Center. Manage mailboxes, mail flow rules, anti-spam. Cannot manage users or SharePoint. Good for: Email team.
+
+**SharePoint Administrator:** Manage SharePoint sites, sharing policies, storage. Good for: Intranet team.
+
+**Teams Administrator:** Manage Teams policies, meeting settings, calling. Good for: Collaboration team.
+
+**Helpdesk Administrator:** Reset passwords, view service health, manage support tickets. Cannot create users, cannot manage other admin accounts. This is the safest role for L1 support staff. Good for: IT helpdesk.
+
+**Security Administrator:** Access to Security Center. Manage security policies, view security reports, manage incidents. Cannot manage users or billing.
+
+**Compliance Administrator:** Access to Compliance Center. Manage DLP, retention, eDiscovery, sensitivity labels. Good for: Legal/compliance team.
+
+**Billing Administrator:** Manage purchases, subscriptions, payment methods. Cannot manage users or security. Good for: Finance team.
+
+**Real-World Scenario — Monday Morning Emergency:**
+8:01 AM: The CEO calls — "I can't access my email!"
+
+Step 1: Go to admin.microsoft.com → Health → Service Health → Check Exchange Online status. Status: ✅ Operational. Not a Microsoft-wide outage.
+
+Step 2: Users → Active Users → Search for CEO → Check license assignment. License: ✅ E5 assigned with Exchange Online.
+
+Step 3: Check sign-in logs (Azure AD → Sign-ins). Finding: ⚠️ 47 failed sign-in attempts from IP address in Russia over the past 2 hours! Account was locked due to brute-force attack.
+
+Step 4: Immediate actions:
+- Block sign-in for the CEO account temporarily
+- Reset the CEO's password to something strong
+- Enable MFA on the CEO's account immediately
+- Unblock sign-in
+- Configure a Conditional Access policy to block sign-ins from countries where the company has no operations
+
+Step 5: Follow-up: Check if any data was accessed, enable MFA for ALL users, review Secure Score, implement Conditional Access baseline policies.
+
+This scenario tests your knowledge of the Admin Center, Azure AD, and security — exactly what the exam covers.
+
+**Interview Tip:**
+"I follow the principle of least privilege for admin roles. I limit Global Admin to 2-4 break-glass accounts with strong MFA, separate from daily work accounts. For daily operations, I assign role-specific admins: Exchange Admin for the email team, Helpdesk Admin for L1 support, Security Admin for the SOC. I review admin role assignments quarterly and check the Message Center weekly for upcoming changes."`,
+quiz:[
+{q:"How many Global Admin accounts does Microsoft recommend?",o:["As many as needed","2-5 maximum","Exactly 10","Only 1"],a:1},
+{q:"Where do you check if Microsoft Teams is experiencing an outage?",o:["Azure Portal","Admin Center → Health → Service Health","Twitter","Google"],a:1},
+{q:"Which admin role can ONLY reset passwords and manage support tickets?",o:["Global Administrator","User Administrator","Helpdesk Administrator","Exchange Administrator"],a:2},
+{q:"A user's account shows 47 failed sign-in attempts from Russia. What is your first action?",o:["Delete the account","Block sign-in and reset the password","Ignore it, it's normal","Call Microsoft support"],a:1},
+{q:"Dynamic Groups require which license?",o:["Any free license","Azure AD Premium P1 or higher","Only E5","Microsoft 365 Business Basic"],a:1}
+]},
+
+{mod:"Microsoft 365 Services",id:"m2t4",title:"Microsoft Teams — Complete Guide",
+content:`Microsoft Teams has become the most important application in the modern workplace. Over 320 million people use it monthly. Let's understand it completely.
+
+**Think of Teams Like a Digital Office Building:**
+- The BUILDING = your Teams tenant (your entire organization)
+- Each FLOOR = a Team (Marketing Team, Engineering Team, Sales Team)
+- Each ROOM on a floor = a Channel (General, Project-Alpha, Design-Review, Social)
+- CONVERSATIONS happen inside rooms = Messages and threads in channels
+- MEETINGS happen in conference rooms = Teams meetings
+- FILES are stored in cabinets in each room = SharePoint document libraries behind each channel
+
+**Teams & Channels:**
+
+**Standard Channels:** Visible to everyone in the team. When you create a Team, it automatically gets a "General" channel. Add more for different workstreams: "Design," "Development," "Budget," "Marketing."
+
+**Private Channels:** Only visible to invited members. Use for sensitive discussions — leadership strategy, salary reviews, legal matters. Private channels get their own SharePoint site (separate from the team's main site).
+
+**Shared Channels:** Allow collaboration with people OUTSIDE your Team — even outside your ORGANIZATION. A shared channel between Contoso and their contractor firm lets both companies collaborate in the same channel without guest access complexity. Shared channels don't require switching tenants.
+
+**Chat (1:1 and Group):**
+- **1:1 Chat:** Like texting a colleague. Persistent history, file sharing, GIFs, reactions.
+- **Group Chat:** Up to 250 people. Quick discussions that don't need a formal Team/Channel.
+- **@Mentions:** @person notifies one person. @team notifies everyone. @channel notifies everyone who favorited the channel.
+- **Priority Notifications:** Mark a message as urgent — it notifies the recipient every 2 minutes for 20 minutes until read.
+- **Message formatting:** Bold, italic, tables, code blocks, bullet lists — rich formatting for professional communication.
+
+**Meetings:**
+- **Meet Now:** Instant meeting — click a button, you're in a meeting. Great for quick discussions.
+- **Scheduled Meetings:** Calendar integration with Outlook/Exchange. Send invites, add agenda, attach files.
+- **Recurring Meetings:** Weekly standups, monthly reviews — set once, happens automatically.
+- **Webinars:** Up to 1,000 attendees. Registration page, presenter/attendee roles, Q&A panel. For customer presentations and training.
+- **Town Halls (formerly Live Events):** Up to 10,000 attendees. One-to-many broadcast. CEO addressing the entire company, quarterly earnings call, company-wide announcements.
+- **Key Meeting Features:** Recording (saved to OneDrive/SharePoint), Transcription (AI-generated text of everything said), Live Captions (real-time subtitles), Breakout Rooms (split meeting into small groups), Together Mode (virtual shared background), Whiteboard (collaborative drawing).
+
+**Teams Phone (Cloud Calling):**
+Replace your entire office phone system with Teams! Users get phone numbers, can make and receive calls from landlines and mobile phones, voicemail, call queues, auto-attendants ("Press 1 for Sales, Press 2 for Support"), call transfer, hold music — everything a traditional PBX does, but in the cloud. Requires Phone System license (included in E5 or $8/user/month add-on) plus a Calling Plan or Direct Routing to PSTN.
+
+**What Powers Teams Behind the Scenes:**
+This is critical for the exam — Teams is a HUB that integrates multiple M365 services:
+- **Files in Teams** → stored in SharePoint Online (each channel = a folder in the team's SharePoint site)
+- **Personal files** → stored in OneDrive
+- **Calendar** → powered by Exchange Online
+- **Identity** → Azure Active Directory (sign-in, permissions)
+- **Chat/messaging** → Azure Communication Services
+- **Meeting recordings** → stored in OneDrive (1:1) or SharePoint (channel meetings)
+
+This means that managing Teams well requires understanding SharePoint, Exchange, and Azure AD.
+
+**Teams Governance — Critical for Enterprise:**
+Without governance, Teams becomes chaos. 50,000 teams created, most abandoned, naming inconsistent, guests everywhere. Best practices:
+
+- **Naming Convention:** Enforce via policy. Format: "Dept-ProjectName" (e.g., "MKT-ProductLaunch2025")
+- **Expiration Policy:** Automatically delete teams after 180 days of inactivity. Owner gets warning 30 days before.
+- **Guest Access:** Control who can invite external users. Require MFA for guests. Restrict guest access to specific teams.
+- **Sensitivity Labels:** Apply to teams — "Confidential" teams have different sharing and guest policies than "General" teams.
+- **App Permission Policies:** Control which third-party apps users can install. Whitelist approved apps only.
+- **Creation Policy:** Restrict who can create new teams (not everyone — limit to specific group).
+
+**Real-World Scenario — Project Launch:**
+A company launches "Project Phoenix" involving 30 people from Marketing, Engineering, and Finance:
+
+1. Create Team "PRJ-Phoenix" using naming convention
+2. Channels: General, Design, Development, Marketing, Budget, Weekly-Standup
+3. Add members from all three departments
+4. Pin important documents in each channel (project charter in General, design specs in Design)
+5. Add Planner tab for task tracking (who does what by when)
+6. Schedule recurring weekly standup meeting in the Weekly-Standup channel
+7. Add Approvals app for budget sign-offs
+8. Set up Power Automate connector: when a file is uploaded to the Budget channel, notify the Finance manager
+9. Apply "Internal" sensitivity label — no guest access for this sensitive project
+
+Result: Everything in ONE place instead of scattered across email threads, file shares, and separate meeting tools. When someone joins the project late, they can read all the channel history and see all the files — complete context.
+
+**Interview Tip:**
+"Microsoft Teams is the hub for teamwork in Microsoft 365, integrating chat, video meetings, file collaboration, and third-party applications. Behind the scenes, Teams leverages SharePoint for file storage, Exchange for calendar and email, and Azure AD for identity. I implement governance using Teams Admin Center policies — naming conventions, expiration policies, guest access controls, sensitivity labels, and app permission policies. For large organizations, I recommend restricting team creation to trained champions and using templates for standardized team structures."`,
+quiz:[
+{q:"When you share a file in a Teams channel, where is it actually stored?",o:["Inside Microsoft Teams servers","In SharePoint Online","In Azure Blob Storage","In the user's OneDrive"],a:1},
+{q:"What is the maximum number of attendees for a Teams Town Hall?",o:["100","1,000","10,000","100,000"],a:2},
+{q:"Shared Channels allow collaboration with:",o:["Only members of the same team","Only people in your organization","People in OTHER organizations without switching tenants","Only anonymous users"],a:2},
+{q:"Which governance policy automatically removes inactive teams?",o:["Naming convention","Expiration policy","Guest access policy","App permission policy"],a:1},
+{q:"Teams Phone requires which license?",o:["Any M365 license","Phone System license (E5 or add-on)","Only E3","Only Business Premium"],a:1}
+]},
+
+{mod:"Microsoft 365 Services",id:"m2t5",title:"SharePoint Online & OneDrive for Business",
+content:`SharePoint and OneDrive are the storage backbone of Microsoft 365. Every file in Teams, every attachment in Outlook, every document your organization creates — it all flows through these two services. Let's master them both.
+
+**OneDrive for Business — Your Personal Cloud Drive:**
+
+Think of OneDrive as your personal filing cabinet at work, but it lives in the cloud. Every M365 user gets 1 TB (1,000 GB) of personal storage, expandable up to 5 TB by an admin.
+
+**Key OneDrive Features:**
+- **Sync Client:** Install on Windows/Mac. Files appear in File Explorer/Finder just like local files. Edit offline — changes sync when you're back online.
+- **Known Folder Move (KFM):** This is a game-changer. It automatically redirects your Desktop, Documents, and Pictures folders to OneDrive. The user sees no difference — same folders, same file paths — but everything is backed up to the cloud. If the laptop gets stolen, run over, or hit with ransomware — all files are safe in OneDrive.
+- **Version History:** OneDrive keeps up to 500 versions of every file. Accidentally overwrote yesterday's work? Right-click → Version History → restore the previous version.
+- **Ransomware Recovery:** If ransomware encrypts all your files, OneDrive detects the suspicious changes and lets you restore your ENTIRE library to any point in the last 30 days. This alone has saved countless companies.
+- **Sharing:** Share files or folders with internal or external people. Options include "Anyone with the link" (most open), "People in your organization," or "Specific people" (most restrictive). You can set passwords and expiration dates on shared links.
+- **Files On-Demand:** Files appear in File Explorer but don't download until you open them. Perfect for laptops with limited storage. Cloud icon = online only. White icon = available locally. Green check = always available.
+
+**SharePoint Online — The Company's Smart File Server + Intranet:**
+
+SharePoint serves two completely different purposes, and understanding both is essential:
+
+**Purpose 1: Document Management System**
+SharePoint document libraries are like super-powered file servers:
+- **Version Control:** Every edit is tracked. Restore any version.
+- **Co-Authoring:** Multiple people edit the same Word/Excel/PowerPoint simultaneously. No more emailing files back and forth with names like "Report_v3_FINAL_FINAL2.docx"
+- **Metadata Columns:** Add custom columns to documents (Department, Project, Status, Confidentiality Level). This makes finding documents incredibly powerful.
+- **Content Types:** Standardize document formats. A "Contract" content type always has the same metadata fields and template.
+- **Check Out/Check In:** Lock a document while you edit so nobody else can change it.
+- **Retention Labels:** Automatically delete after 7 years or preserve forever for legal compliance.
+- **DLP Policies:** Prevent sharing documents containing credit card numbers or Social Security numbers outside the organization.
+
+**Purpose 2: Intranet Platform**
+SharePoint builds beautiful company websites:
+
+**Team Sites:** Connected to a Microsoft 365 Group (and therefore to Teams). Private by default. Shared document library, shared notebook, shared calendar. Every Teams team automatically gets a Team Site.
+
+**Communication Sites:** Not connected to a group. Beautiful, modern layouts for one-to-many publishing. Three templates: Topic (department landing page), Showcase (visual storytelling), Blank. Use for: company intranet homepage, HR portal, IT knowledge base, department news.
+
+**Hub Sites:** The organizational layer. A Hub Site connects multiple Team Sites and Communication Sites together with unified navigation, search, and branding. Think of it as the "parent" site that ties everything together.
+
+**Architecture Pattern — Hub and Spoke:**
+This is the recommended approach for large organizations:
+
+Hub: "Contoso Intranet" (Communication Site)
+Connected spokes:
+- HR Portal (Communication Site) — policies, benefits, org chart
+- IT Portal (Communication Site) — helpdesk, how-to guides, status
+- Finance Portal (Communication Site) — expense templates, budget reports
+- Each department (Team Sites) — project documents, team files
+
+Benefits: Unified navigation across all sites, single search that finds documents in ANY connected site, consistent branding, centralized governance.
+
+**SharePoint vs OneDrive — When to Use Which:**
+- Personal work files that only you need → OneDrive
+- Files shared with your team → SharePoint (Team Site / Teams channel)
+- Company-wide information (policies, news, templates) → SharePoint (Communication Site)
+- Rule of thumb: If it belongs to YOU, use OneDrive. If it belongs to a TEAM or the COMPANY, use SharePoint.
+
+**Real-World Scenario — Company File Server Migration:**
+A company has a legacy Windows file server with 10 TB of files shared across 20 departments:
+
+1. **Audit existing shares** — Map each file share to a department/project
+2. **Create SharePoint structure** — Hub site for intranet, Team site per department
+3. **Migrate files** — Use SharePoint Migration Tool (SPMT) or Migration Manager to move files while preserving folder structure, permissions, and timestamps
+4. **Configure OneDrive** — Enable Known Folder Move via Intune policy for all users
+5. **Train users** — Show them how sync works, how to share files, how to use version history
+6. **Decommission file server** — After 30-day parallel run, turn off the old server
+
+Result: Files accessible from anywhere, automatic backup, version history, co-authoring, powerful search, mobile access — everything the old file server couldn't do.
+
+**Interview Tip:**
+"I architect SharePoint using the hub-and-spoke model — a hub Communication Site for the intranet with department Team Sites as spokes. OneDrive handles personal file sync with Known Folder Move redirecting Desktop/Documents/Pictures to the cloud automatically. For file server migration, I use the SharePoint Migration Tool to preserve structure and permissions, then enable sync clients for users to maintain familiar file access patterns."`,
+quiz:[
+{q:"How much OneDrive storage does each M365 user get by default?",o:["100 GB","500 GB","1 TB (1,000 GB)","Unlimited"],a:2},
+{q:"Known Folder Move (KFM) redirects which folders to OneDrive?",o:["Only Documents","Desktop, Documents, and Pictures","All folders on the computer","Only the Downloads folder"],a:1},
+{q:"SharePoint Communication Sites are best used for:",o:["Private team collaboration","Company-wide publishing (intranet, news, portals)","Personal file storage","Email management"],a:1},
+{q:"Files shared in a Microsoft Teams channel are stored in:",o:["OneDrive personal storage","SharePoint team site linked to that Team","A separate Teams file server","Azure Blob Storage"],a:1},
+{q:"A Hub Site in SharePoint provides:",o:["Only email functionality","Unified navigation, search, and branding across connected sites","Only document storage","Only video hosting"],a:1}
+]},
+
+{mod:"Microsoft 365 Services",id:"m2t6",title:"Exchange Online & Email Security",
+content:`Exchange Online is the email backbone of Microsoft 365. It handles email, calendar, contacts, and tasks for over 400 million commercial users. Let's cover everything you need to know.
+
+**Mailbox Types:**
+
+**User Mailboxes:** Every licensed user gets one. 50 GB with E1/Business plans, 100 GB with E3/E5. Includes email, calendar, contacts, tasks, and notes. Connected to the global address list (GAL) so everyone in the company can find each other.
+
+**Shared Mailboxes:** A mailbox that multiple people can access — like info@company.com, support@company.com, or billing@company.com. The BEST part? They're FREE! Shared mailboxes don't require a license as long as they're under 50 GB. Multiple employees can read and send from the shared mailbox. When someone replies to support@company.com, any team member can see and respond.
+
+**Resource Mailboxes — Rooms:** Represent physical conference rooms. When someone books a meeting and adds "Conference Room A," the room mailbox automatically accepts or declines based on availability. No more double-bookings!
+
+**Resource Mailboxes — Equipment:** Represent shared equipment like projectors, company cars, or specialized tools. Book them like rooms.
+
+**In-Place Archive:** Unlimited archive storage. Old emails automatically move to the archive mailbox based on retention policies. Users can search their archive right from Outlook. Critical for organizations that need to keep email for 7+ years (legal, finance, healthcare).
+
+**Email Security — Defense in Depth:**
+
+**Layer 1: Exchange Online Protection (EOP) — Included in ALL plans!**
+Every M365 plan comes with EOP. It provides: Anti-spam filtering (blocks junk email), anti-malware scanning (checks attachments for viruses), connection filtering (blocks known bad IP addresses), and outbound spam protection (prevents your users from being spammers).
+
+**Layer 2: Microsoft Defender for Office 365 (E5 or add-on)**
+This is the advanced threat protection layer:
+- **Safe Attachments:** When an email arrives with an attachment, Defender opens it in a virtual sandbox (an isolated environment) to see if it's malicious. If it tries to encrypt files, contact a command server, or do anything suspicious — the attachment is blocked before it reaches the user. This process takes seconds and catches zero-day malware that traditional antivirus misses.
+- **Safe Links:** When a user clicks a URL in an email, Defender checks the URL at that exact moment — not when the email was delivered, but when the user actually clicks. This catches "time-bombed" URLs that are clean during delivery but become malicious hours later.
+- **Anti-Phishing AI:** Uses machine learning to detect when someone is impersonating a person in your organization. If an attacker sends an email that looks like it's from your CEO (same display name, similar email address), Defender flags it as a potential impersonation attack.
+- **Attack Simulation Training:** Send fake phishing emails to your own employees to test who clicks. Track who falls for it, provide training, and measure improvement over time. Incredibly effective for security awareness.
+
+**Email Authentication (CRITICAL for preventing spoofing):**
+
+**SPF (Sender Policy Framework):** A DNS record that says "Only these specific servers are authorized to send email for our domain." If someone tries to send email pretending to be from your domain but uses an unauthorized server, the receiving system can detect it.
+
+**DKIM (DomainKeys Identified Mail):** Adds a digital signature to every outgoing email. The receiving system verifies the signature matches — proving the email wasn't tampered with during transit and really came from your domain.
+
+**DMARC (Domain-based Message Authentication, Reporting, and Conformance):** The enforcement policy. It tells receiving systems: "If an email claiming to be from our domain fails SPF AND DKIM checks, here's what to do." Options: none (just report), quarantine (send to spam), or reject (block completely). Start with "none" to monitor, then gradually tighten to "reject."
+
+Together, SPF + DKIM + DMARC form the email authentication triad that prevents email spoofing. Setting these up is one of the first things any M365 admin should do.
+
+**Data Loss Prevention (DLP) in Exchange:**
+DLP policies automatically scan outgoing emails for sensitive data patterns. Examples: credit card numbers (16 digits matching the Luhn algorithm), Social Security numbers, health records (ICD codes), passport numbers. If an employee tries to email a spreadsheet containing customer credit card numbers to their personal Gmail, DLP will: show a warning (override allowed), block the email (no override), or block and notify the admin — depending on the policy configuration.
+
+**Mail Flow Rules (Transport Rules):**
+Rules that process email as it flows through Exchange. Powerful automation examples:
+- "If email is sent externally AND contains 'confidential' in subject → encrypt the message"
+- "If email is from external → add a disclaimer banner: 'This email is from outside the organization'"
+- "If email is sent to the CEO → add the executive assistant as BCC"
+- "Block auto-forwarding rules to external addresses" (prevents data exfiltration if an account is compromised)
+
+**Compliance Features:**
+- **Litigation Hold:** Preserves ALL email for a user — including deleted items. Required for legal cases where you must preserve evidence. The user doesn't know their mailbox is on hold.
+- **Retention Policies:** Automatically keep email for a specific period (7 years for SOX compliance) and then delete. Or keep forever for legal compliance.
+- **eDiscovery:** Search across ALL mailboxes, SharePoint, OneDrive, and Teams for specific content. Used for legal investigations, HR inquiries, and compliance audits.
+- **Journal Rules:** Copy ALL email to a compliance mailbox. Required by some financial regulations.
+
+**Real-World Scenario — Phishing Attack on CFO:**
+Tuesday, 2:30 PM: The CFO receives an email that appears to be from the CEO asking for an urgent wire transfer of $250,000 to a new vendor. The email looks legitimate — same display name, similar email address (CEO@contoso.com vs CEO@cont0so.com — the "o" is actually a zero).
+
+How Defender stops this:
+1. Anti-phishing AI detects the display name matches an internal user but the domain is different → flags as impersonation
+2. Email is quarantined before reaching the CFO's inbox
+3. Admin receives an alert in the Security Center
+4. Investigation reveals: the attacker registered a lookalike domain and targeted the CFO specifically
+
+Admin's response:
+5. Configure anti-phishing policy to protect all C-suite users by name
+6. Enable DMARC with reject policy for contoso.com
+7. Run Attack Simulation Training to test all employees
+8. Block the lookalike domain in the tenant block list
+
+**Interview Tip:**
+"Exchange Online is the backbone of enterprise email in M365. I implement defense-in-depth: EOP for baseline protection, Defender for Office 365 for advanced threats (Safe Attachments, Safe Links, anti-phishing AI), and email authentication (SPF, DKIM, DMARC) to prevent domain spoofing. For compliance, I configure retention policies for legal requirements, DLP to prevent data leakage, and mail flow rules for encryption and disclaimers. Shared mailboxes are free under 50 GB — a significant cost saver."`,
+quiz:[
+{q:"Shared mailboxes in Exchange Online require a license if:",o:["Always require a license","Never require a license","Only if over 50 GB","Only if more than 5 users access it"],a:2},
+{q:"Safe Attachments in Defender for Office 365 works by:",o:["Blocking all attachments","Opening attachments in an isolated sandbox to test for malware","Compressing attachments","Encrypting all attachments"],a:1},
+{q:"DMARC tells receiving email servers to:",o:["Trust all incoming email","Reject/quarantine emails that fail SPF AND DKIM checks","Block all external email","Encrypt all email in transit"],a:1},
+{q:"An employee tries to email a spreadsheet with credit card numbers externally. Which feature blocks this?",o:["Safe Links","Anti-phishing","Data Loss Prevention (DLP)","Mail flow rules"],a:2},
+{q:"Litigation Hold preserves:",o:["Only the inbox folder","Only sent items","ALL email including permanently deleted items","Only flagged items"],a:2}
+]},
+
+{mod:"Microsoft 365 Services",id:"m2t7",title:"Power Platform — No-Code/Low-Code Tools",
+content:`The Power Platform is Microsoft's suite of no-code and low-code tools that enable "citizen developers" — regular business users who aren't programmers — to build apps, automate workflows, analyze data, and create chatbots. This is one of the fastest-growing parts of Microsoft 365.
+
+**Power BI — Business Intelligence & Data Visualization**
+Power BI connects to over 100 data sources (Excel, SQL Server, SharePoint, Salesforce, Google Analytics, etc.) and creates interactive dashboards and reports.
+
+Key capabilities: Drag-and-drop report builder, natural language Q&A ("Show me sales by region last quarter"), real-time dashboards that auto-refresh, mobile app for on-the-go insights, row-level security (each manager sees only their team's data), and sharing via workspaces and apps.
+
+Real-world use: The CFO has a dashboard showing real-time revenue by product line, expenses by department, and cash flow forecast — all updating automatically from the finance system.
+
+**Power Apps — Build Applications Without Code**
+Two types of apps:
+- **Canvas Apps:** Start with a blank canvas and design pixel-perfect interfaces. Drag-and-drop controls (forms, galleries, buttons). Connect to any data source.
+- **Model-Driven Apps:** Start with the data model (tables and relationships), and the app structure is auto-generated. Best for complex business processes with many entities.
+
+Both connect to: SharePoint lists, Excel, SQL Server, Dataverse, Common Data Service, and 500+ connectors (Salesforce, SAP, Twitter, etc.).
+
+Real-world use: A field service company builds a Canvas App that technicians use on their tablets. They log service visits, take photos of equipment, capture customer signatures, and sync everything to SharePoint — all built by the operations manager who never wrote a line of code.
+
+**Power Automate — Workflow Automation**
+Automate repetitive tasks with flows:
+- **Cloud Flows:** Triggered by events (new email → save attachment to SharePoint → notify team in Teams)
+- **Scheduled Flows:** Run at specific times (every Monday at 8 AM, generate a report and email it)
+- **Instant Flows:** Triggered by a button press (click a button to request time off)
+- **Desktop Flows (RPA):** Record actions on your desktop (click here, type this, copy that) and replay them — Robotic Process Automation for legacy applications without APIs
+- **Approval Flows:** Route documents for approval with approve/reject buttons (expense reports, vacation requests, purchase orders)
+
+Real-world use: When a new employee is added to the HR system → Power Automate creates their M365 account → adds them to appropriate Teams → sends a welcome email → creates a task for IT to ship equipment → notifies the manager. Entire onboarding workflow automated.
+
+**Copilot Studio (formerly Power Virtual Agents) — Build Chatbots**
+Create AI-powered chatbots without code:
+- IT Helpdesk bot: "How do I connect to the VPN?" → shows instructions. "Reset my password" → triggers Power Automate flow to send reset link.
+- HR bot: "How many vacation days do I have?" → queries HR system via connector. "I want to request time off" → starts approval flow.
+- Customer service bot: "What's my order status?" → queries order system. "I want to return an item" → creates a support ticket.
+
+**Dataverse — The Underlying Database**
+Dataverse (formerly Common Data Service) is the cloud database that underlies the Power Platform. It provides:
+- Structured data storage with tables and relationships
+- Built-in security with role-based and row-level access control
+- Business rules and validation without code
+- Audit trail of all data changes
+- Integrates seamlessly with Power Apps, Power Automate, and Dynamics 365
+
+**Power Platform Governance:**
+Without governance, Power Platform can become a security risk (connecting to unauthorized data sources, creating uncontrolled apps):
+- **DLP Policies for Power Platform:** Control which connectors can be used together. Example: "SharePoint and M365 connectors are OK together, but cannot be combined with Twitter or personal Gmail connectors."
+- **Environment Management:** Create separate environments for Dev, Test, and Production. Control who can create apps in each.
+- **Center of Excellence (CoE) Kit:** Free toolkit from Microsoft that provides dashboards to monitor Power Platform usage across your organization — how many apps, who created them, which connectors they use, which apps are popular.
+
+**Real-World Scenario — IT Helpdesk Automation:**
+The IT department receives 500 password reset tickets per month. Each takes 5 minutes = 42 hours of IT staff time per month.
+
+Solution:
+1. Build a Copilot Studio chatbot in Teams
+2. User messages the bot: "I forgot my password"
+3. Bot verifies identity using security questions
+4. Bot triggers a Power Automate flow
+5. Flow calls Microsoft Graph API to send a password reset link
+6. User resets their own password
+7. Bot logs the interaction for audit
+
+Result: 80% reduction in password reset tickets. IT staff redeployed from password resets to strategic projects. ROI achieved in 2 weeks.
+
+**Interview Tip:**
+"Power Platform enables citizen development at scale. I implement governance with DLP policies controlling connector combinations, environment management separating Dev/Test/Prod, and the CoE Kit for monitoring. Power Automate eliminates manual processes — I've seen organizations reduce helpdesk tickets by 80% using chatbots and automated workflows. For data-intensive apps, I use Dataverse with row-level security rather than SharePoint lists."`,
+quiz:[
+{q:"Power Apps allows you to:",o:["Only create dashboards","Build applications without writing code","Only automate workflows","Only create chatbots"],a:1},
+{q:"Power Automate Desktop Flows provide:",o:["Cloud-based workflows only","Robotic Process Automation (RPA) for desktop applications","Only email automation","Only SharePoint workflows"],a:1},
+{q:"DLP policies for Power Platform control:",o:["Email data loss prevention","Which connectors can be used together in apps and flows","Document sharing policies","Password policies"],a:1},
+{q:"Dataverse provides:",o:["Email hosting","Cloud database with security and audit for Power Platform","File storage only","Video streaming"],a:1}
+]},
+
+{mod:"Microsoft 365 Services",id:"m2t8",title:"Microsoft Viva, Copilot, Loop & Modern Apps",
+content:`Microsoft keeps innovating. These are the latest additions to M365 that are increasingly appearing on the exam.
+
+**Microsoft Viva — Employee Experience Platform**
+Viva lives INSIDE Microsoft Teams. Employees don't need to learn a new tool — it's integrated where they already work.
+
+**Viva Insights** analyzes work patterns using M365 data (calendar, email, Teams activity) and provides actionable recommendations. Three levels:
+- *Personal Insights:* "You spent 25 hours in meetings this week — that's 60% of your time. Consider declining low-priority meetings." Shows focus time, meeting trends, after-hours work, and network quality.
+- *Manager Insights:* "Your team worked an average of 2 hours after normal business hours this week. 3 team members haven't had a 1:1 with you in 30 days." Helps managers prevent burnout and stay connected.
+- *Organization Insights:* Company-wide trends visible to leaders. "Engineering teams have 40% more meeting hours than average. Sales team collaboration with Product is declining." ALL insights are privacy-protected — managers cannot see individual employee data, only aggregated patterns.
+
+**Viva Learning** creates a centralized learning hub in Teams. It aggregates content from: LinkedIn Learning (included with some plans), internal SharePoint content, and third-party providers (Coursera, Udemy, Skillsoft, etc.). Managers can assign courses to team members, track completion, and recommend content. AI suggests relevant courses based on your role and interests.
+
+**Viva Connections** brings your SharePoint intranet into Teams. Instead of employees having to navigate to a SharePoint site, their personalized company dashboard appears right inside Teams — company news, quick links, tasks, approvals. Especially powerful for frontline workers who may not regularly open a web browser but always have Teams on their phone.
+
+**Viva Topics** uses AI to automatically discover and organize knowledge across your M365 content. It scans emails, documents, Teams conversations, and SharePoint sites to identify "topics" — like project names, technologies, products, or concepts. For each topic, it creates a "topic card" showing: definition, related documents, relevant SharePoint sites, and people who are experts. It's like automatically building a Wikipedia for your company.
+
+**Viva Goals** tracks OKRs (Objectives and Key Results). Teams set objectives, define measurable key results, and track progress. Goals roll up from individual → team → department → company, showing alignment at every level.
+
+**Viva Engage** (formerly Yammer) is enterprise social networking — communities, announcements, stories, leadership Q&A, and employee recognition.
+
+**Microsoft 365 Copilot — AI in Every App ($30/user/month add-on)**
+
+Copilot is the biggest M365 innovation in a decade. It brings AI capabilities directly into the apps people already use:
+
+- **Word:** "Draft a project proposal based on the Q3 results in my SharePoint site and the client requirements from last week's email." Copilot reads your M365 data and generates a first draft.
+- **Excel:** "Analyze this sales data. What trends do you see? Create a chart showing monthly revenue by region." Copilot understands your data and creates formulas, charts, and insights.
+- **PowerPoint:** "Create a 10-slide presentation from this Word document, using the corporate template." Copilot converts documents into presentations with proper formatting.
+- **Outlook:** "Summarize this 30-email thread and draft a response committing to the Friday deadline." Copilot reads the entire thread and creates a concise reply.
+- **Teams:** "What was discussed in the meeting I missed?" Copilot provides meeting recap with key decisions, action items, and follow-ups.
+
+**Critical Copilot Details for the Exam:**
+- Requires E3/E5 or Business Standard/Premium as the BASE license
+- Copilot add-on costs $30/user/month on top of the base license
+- Uses Microsoft Graph data (your organization's emails, files, chats, meetings)
+- Enterprise-grade: Your data stays in your tenant and is NEVER used to train the AI model
+- Before deploying Copilot, you should have Sensitivity Labels and DLP in place because Copilot can surface any content the user has access to
+
+**Microsoft Loop — Live Collaborative Components**
+Loop introduces components that are LIVE and PORTABLE across M365 apps. A Loop component created in Teams can be pasted into Outlook, and changes in either place update everywhere simultaneously.
+
+Loop Components: tables, task lists, paragraphs, voting tables, status trackers — all live and synced.
+Loop Pages: Flexible canvases for brainstorming and project planning.
+Loop Workspaces: Organize multiple pages for a project.
+
+**Other Modern Apps:**
+- **Microsoft Lists:** Smart tracking tool evolved from SharePoint lists. Templates: Issue Tracker, Event Planner, Content Scheduler, Travel Requests. Built-in rules and automation. Works in Teams, SharePoint, and standalone.
+- **Microsoft Bookings:** Online appointment scheduling. External (customers book time with your staff) and internal (employees self-schedule). Integrates with Teams for virtual appointments.
+- **Microsoft Forms:** Surveys, quizzes, and polls. Real-time response analysis, branching logic, file upload. Integrates with Power Automate for automated processing.
+- **Microsoft Planner:** Visual task management with Kanban boards. Assign tasks, set due dates, track progress. Lives inside Teams as a tab. Integrates with To Do for personal task management.
+
+**Interview Tip:**
+"Microsoft Viva creates an employee experience layer within Teams — Insights for wellbeing and productivity patterns, Learning for skill development, Connections for company communication, and Topics for AI-powered knowledge management. Copilot for M365 brings generative AI to every app using Microsoft Graph, but requires proper information governance (Sensitivity Labels, DLP, SharePoint permissions) before deployment since it can surface any content the user can access. Loop enables real-time collaborative components that stay synchronized across Teams, Outlook, and web."`,
+quiz:[
+{q:"Viva Insights helps managers identify:",o:["Storage usage","Team burnout risk and work patterns","Security threats","License costs"],a:1},
+{q:"Microsoft 365 Copilot costs:",o:["Free with E5","$10/user/month","$30/user/month add-on","$57/user/month"],a:2},
+{q:"Before deploying Copilot, you should have:",o:["Nothing — just enable it","Sensitivity Labels and DLP in place","Only MFA enabled","A separate Azure subscription"],a:1},
+{q:"Loop Components are special because they:",o:["Only work in Loop app","Are live and sync across Teams, Outlook, and other apps","Are static documents","Require a separate license"],a:1},
+{q:"Viva Topics uses AI to:",o:["Send emails","Auto-discover and organize knowledge across M365 content","Manage devices","Create presentations"],a:1}
+]},
+
+{mod:"Microsoft 365 Services",id:"m2t9",title:"Windows as a Service & Intune/Autopilot Basics",
+content:`This topic bridges M365 with endpoint management — understanding how Windows updates work and how Intune and Autopilot fit into the M365 picture.
+
+**Windows as a Service (WaaS) — The New Update Model:**
+
+The OLD way: Windows XP → Vista → 7 → 8 → 10. Major upgrades every 3-5 years. Painful, expensive migrations taking months or years. Applications breaking. Retraining users.
+
+The NEW way: Windows 10 and 11 receive continuous updates. No more massive migrations. The OS evolves gradually, and you're always on a supported, secure version.
+
+**Two Types of Updates:**
+- **Feature Updates:** Released annually (e.g., Windows 11 23H2, 24H2). Add new features, improvements, and capabilities. Support lifecycle: 24 months for Home/Pro, 36 months for Enterprise/Education.
+- **Quality Updates:** Released monthly on "Patch Tuesday" (second Tuesday of each month). Contain security fixes, bug fixes, and reliability improvements. These are critical — never skip them!
+- **Driver Updates:** Hardware driver updates delivered through Windows Update.
+
+**Servicing Channels:**
+- **General Availability Channel:** The standard release that all editions receive. This is what 99% of devices should use.
+- **Long-Term Servicing Channel (LTSC):** For SPECIALIZED devices only. Receives only quality updates — NO feature updates. Gets 5 years of support. Only for: ATMs, medical devices, factory floor equipment, kiosks, point-of-sale terminals. NEVER use LTSC for regular office PCs — it's a common mistake.
+
+**Update Deployment Tools:**
+- **Windows Update for Business (WUfB):** Configure update policies via Intune. Create deployment rings (IT first → Pilot → Broad). Defer feature updates up to 365 days, quality updates up to 30 days.
+- **Windows Autopatch:** Microsoft's MANAGED update service. Microsoft handles the rings, monitors for issues, and automatically rolls back if problems are detected. Requires E3+ and Intune.
+- **WSUS:** Legacy on-premises update server. Still used but being replaced by WUfB.
+- **MECM/SCCM:** Enterprise update deployment using Configuration Manager. Most complex but most control.
+
+**Microsoft 365 Apps Update Channels:**
+M365 Apps (Word, Excel, etc.) receive feature updates through channels:
+- **Current Channel:** Latest features as soon as they're ready. No set schedule. For users who want the newest features immediately.
+- **Monthly Enterprise Channel:** Features once per month on a predictable schedule (second Tuesday). For organizations that want monthly feature updates with predictability.
+- **Semi-Annual Enterprise Channel:** Features every six months (January and July). For organizations with strict change management that need maximum testing time.
+
+Admins configure channels through the M365 Admin Center, Intune, Group Policy, or Office Deployment Tool. You can assign different channels to different groups — IT team on Current for early testing, everyone else on Monthly Enterprise.
+
+**Microsoft Intune — Cloud Device Management (from M365 perspective):**
+
+Intune is the cloud-based service for managing devices. It's included in M365 Business Premium, E3, E5, and F3 plans.
+
+What Intune manages: Windows, macOS, iOS, Android, Linux, and ChromeOS.
+
+Key capabilities:
+- **Enrollment:** Register devices with your organization. Corporate devices can be fully managed. Personal (BYOD) devices can use app-only management.
+- **Configuration Profiles:** Push settings to devices — Wi-Fi networks, VPN configurations, email accounts, device restrictions (block camera, block USB, require encryption).
+- **Compliance Policies:** Define what a "healthy" device looks like: BitLocker encryption ON, minimum OS version, antivirus active, firewall ON. Non-compliant devices can be blocked from accessing company resources via Conditional Access.
+- **App Deployment:** Push applications to devices automatically — Microsoft 365 Apps, company VPN client, Chrome browser.
+- **Remote Actions:** Wipe a lost device, lock it, reset the PIN, push a sync, restart it.
+
+**Windows Autopilot — Zero-Touch Deployment:**
+The traditional way to set up a new laptop: IT receives 500 laptops → unboxes each one → boots from USB → installs a Windows image → installs applications → configures settings → ships to user. Hours per device.
+
+Autopilot way: The laptop vendor (Dell, HP, Lenovo) registers the device's hardware ID with your M365 tenant. Ships the laptop directly to the employee's home. Employee powers on → connects to Wi-Fi → signs in with their work email → Intune automatically downloads all policies, apps, and settings. Ready in 30 minutes. IT NEVER touches the device.
+
+**Endpoint Analytics (in Intune):**
+Endpoint Analytics provides data-driven insights into device performance. Startup Performance scores show which devices boot slowly and why. Proactive Remediations run detection and fix scripts on schedule (e.g., clear temp files when disk is over 90%). Application Reliability tracks which apps crash most. Work From Anywhere score measures remote work readiness across your fleet.
+
+**BYOD (Bring Your Own Device):**
+For personal devices, Intune offers MAM (Mobile Application Management) WITHOUT device enrollment. This means you protect COMPANY data without controlling the employee's personal device. App Protection Policies can: prevent copying company data to personal apps, require a PIN to open Outlook/Teams, encrypt app data, block screenshots in managed apps, and selectively wipe ONLY company data when the employee leaves — personal photos and apps are untouched.
+
+**Windows 365 vs Azure Virtual Desktop (AVD):**
+Both provide virtual desktops, but they're designed for different needs:
+- **Windows 365 Cloud PC:** Fixed monthly price per user. Simple setup. Each user gets a dedicated Cloud PC. Managed through Intune like a physical device. Best for: simplicity, predictable costs, non-technical admins.
+- **Azure Virtual Desktop (AVD):** Consumption-based pricing (pay for what you use). Multi-session Windows 11 (multiple users share one VM — unique to Azure). More complex setup but more flexible and cost-effective at scale. Best for: large deployments, cost optimization, technical teams.
+
+Key exam point: Windows 365 = simple fixed cost per user. AVD = flexible consumption-based, supports multi-session.
+
+**The Zero Trust Connection:**
+Intune + Azure AD Conditional Access = Zero Trust for devices.
+User tries to access company email → Azure AD authenticates them → checks: Is the device enrolled in Intune? → Is it compliant (encryption on, OS updated, antivirus running)? → If YES: access granted. If NO: access blocked until device is compliant.
+
+**Interview Tip:**
+"Windows as a Service delivers continuous updates: annual feature updates and monthly quality updates. I manage deployment using WUfB via Intune with staged deployment rings — IT preview, pilot, then broad. LTSC is only for specialized devices, never general PCs. For device management, Intune provides cloud-based MDM+MAM included in Business Premium and E3+. Autopilot enables zero-touch deployment directly from the vendor to the end user. For BYOD, MAM-only policies protect company data without managing the personal device — critical for employee privacy."`,
+quiz:[
+{q:"Feature Updates for Windows are released:",o:["Weekly","Monthly","Annually","Every 5 years"],a:2},
+{q:"LTSC (Long-Term Servicing Channel) should be used for:",o:["All office PCs","Specialized devices only (ATMs, kiosks, medical equipment)","All laptops","Developer workstations"],a:1},
+{q:"Windows Autopilot allows:",o:["Manual imaging of each laptop","Zero-touch deployment — vendor ships directly to user","Only local network deployment","Only USB-based installation"],a:1},
+{q:"MAM-only (without enrollment) protects:",o:["The entire personal device","Only company apps and data on personal devices","Only personal apps","Nothing — enrollment is required"],a:1},
+{q:"What happens when a device fails an Intune compliance check with Conditional Access?",o:["Nothing — it's just logged","Access to company resources is blocked","The device is automatically wiped","The user is fired"],a:1}
+]},
+
+// ─── MODULE 3: SECURITY & COMPLIANCE ───
+{mod:"Security & Compliance",id:"m3t1",title:"Identity & Access Management with Azure AD",
+content:`Identity is the foundation of ALL security in Microsoft 365. Azure Active Directory (now called Microsoft Entra ID) is the identity service that controls who can access what. Let's master it.
+
+**Authentication vs Authorization:**
+Authentication (AuthN) = "WHO are you?" — Proving your identity (password, fingerprint, MFA code).
+Authorization (AuthZ) = "WHAT can you do?" — Checking your permissions (can you read this file? Can you delete that mailbox?).
+
+Azure AD handles BOTH. When you sign into M365, Azure AD first authenticates you (verifies your password + MFA), then authorizes your access to specific services based on your licenses and permissions.
+
+**Single Sign-On (SSO):**
+Sign in ONCE to Azure AD, and you're automatically signed into all connected applications — M365, SharePoint, Salesforce, ServiceNow, Workday, and over 3,000 pre-integrated apps. No more remembering 20 different passwords. SSO dramatically improves both security (fewer passwords = fewer to steal) and user experience.
+
+**Multi-Factor Authentication (MFA) — The Most Important Security Control:**
+MFA requires TWO or more forms of proof: something you KNOW (password), something you HAVE (phone/security key), or something you ARE (fingerprint/face).
+
+MFA methods ranked by security:
+1. **FIDO2 Security Keys** (most secure): Physical hardware tokens. Phishing-resistant because the key cryptographically verifies the website is legitimate.
+2. **Windows Hello for Business:** Face recognition or fingerprint tied to the device's TPM chip. Phishing-resistant.
+3. **Microsoft Authenticator App:** Push notification to your phone. You approve the sign-in with a number match. Very secure and convenient.
+4. **Phone call / SMS** (least secure): A code texted or called to your phone. Vulnerable to SIM-swapping attacks where an attacker convinces your carrier to transfer your phone number.
+
+**Conditional Access (requires Azure AD Premium P1):**
+This is the REAL power of Azure AD. Conditional Access policies are IF/THEN rules that evaluate context before granting access:
+
+Example policies:
+- IF user is signing in from outside the corporate network → THEN require MFA
+- IF user is accessing Finance SharePoint AND device is not managed → THEN block access
+- IF sign-in risk is HIGH (impossible travel detected) → THEN require password change + MFA
+- IF user is on a personal phone → THEN allow email via web only, block downloads
+- IF user is a guest (external) → THEN require MFA + block access to sensitive sites
+
+**Identity Protection (requires Azure AD Premium P2):**
+Uses Microsoft's massive threat intelligence (analyzing billions of sign-ins daily) and machine learning to detect risky sign-ins. Risk types: anonymous IP, atypical travel (signed in from New York at 9 AM, then from London at 9:15 AM — impossible!), malware-linked IP, unfamiliar sign-in properties. Policies can automatically require MFA, force password change, or block access based on risk level.
+
+**Privileged Identity Management (PIM) (requires Azure AD Premium P2):**
+Just-in-time admin access. Instead of permanently holding the Global Admin role, an admin "activates" it when needed, for a specific time period (1-8 hours), with a justification. After the time expires, the privilege is automatically revoked. This dramatically reduces the risk of compromised admin accounts.
+
+**Self-Service Password Reset (SSPR):**
+Users reset their own forgotten passwords without calling IT. They verify identity via MFA methods and create a new password. Reduces helpdesk tickets by 40%+ and costs nothing extra with Azure AD P1.
+
+**Azure AD Editions:**
+- **Free:** Basic user management, SSO to M365, MFA via security defaults (all-or-nothing)
+- **P1 (included in E3/Business Premium):** Conditional Access, dynamic groups, SSPR, application proxy, custom branding
+- **P2 (included in E5):** Identity Protection (risk-based policies), PIM (just-in-time admin), access reviews
+
+**Zero Trust — The Modern Security Model:**
+The old model: "If you're inside the corporate network, you're trusted." This was like a castle with a moat — once you're past the wall, you can go anywhere.
+
+The new model (Zero Trust): "NEVER trust, ALWAYS verify." Three principles:
+1. **Verify explicitly:** Authenticate and authorize based on ALL available signals (user identity, location, device health, resource being accessed, anomalies).
+2. **Use least privilege access:** Give the minimum permissions needed for the task. Use PIM for time-limited admin access.
+3. **Assume breach:** Design security as if attackers are already inside. Segment access, encrypt data, monitor continuously.
+
+**Interview Tip:**
+"I implement Zero Trust starting with identity as the control plane. Azure AD with MFA is the foundation — I require MFA for all users using Conditional Access policies, which evaluate context (location, device compliance, risk level) before granting access. For admins, I use PIM for just-in-time elevated access. Identity Protection automatically remediates risky sign-ins. SSPR reduces helpdesk burden by 40%+. The three Zero Trust principles — verify explicitly, least privilege, assume breach — guide every security decision."`,
+quiz:[
+{q:"Authentication answers the question:",o:["What can you do?","WHO are you?","Where are you?","When did you arrive?"],a:1},
+{q:"Which MFA method is MOST secure?",o:["SMS text message","Phone call","FIDO2 security key","Email code"],a:2},
+{q:"Conditional Access requires which Azure AD edition?",o:["Free","P1 (Premium 1) or higher","P2 only","Not available in Azure AD"],a:1},
+{q:"PIM (Privileged Identity Management) provides:",o:["Password management","Just-in-time admin access that expires automatically","Email protection","File encryption"],a:1},
+{q:"Zero Trust means:",o:["Trust everyone inside the corporate network","Never trust, always verify every access request","Block all external access","Only trust VPN users"],a:1}
+]},
+
+{mod:"Security & Compliance",id:"m3t2",title:"M365 Defender, Threat Protection & Compliance",
+content:`Microsoft 365 Defender is a unified Extended Detection and Response (XDR) platform that protects across email, endpoints, identity, and cloud apps. Combined with compliance tools, it forms the complete security and governance picture.
+
+**The Four Defender Pillars:**
+
+**1. Microsoft Defender for Office 365 — Email & Collaboration Security**
+Protects Exchange Online, SharePoint, OneDrive, and Teams from advanced threats. Key features: Safe Attachments (sandbox detonation), Safe Links (time-of-click URL scanning), Anti-Phishing AI (impersonation detection), Attack Simulation Training (fake phishing tests for employees), and Automated Investigation and Response (AIR — automatically investigates and remediates threats).
+
+**2. Microsoft Defender for Endpoint — Device Security**
+Endpoint Detection and Response (EDR) for workstations, servers, and mobile devices. Works on Windows, macOS, Linux, iOS, and Android. Key capabilities: Threat & Vulnerability Management (discovers unpatched software and misconfigurations), Attack Surface Reduction rules (block Office macro abuse, script obfuscation), Controlled Folder Access (prevents ransomware from encrypting protected folders), automated investigation, and integration with Intune compliance policies (block access if device risk is High).
+
+**3. Microsoft Defender for Identity — Active Directory Security**
+Monitors your on-premises Active Directory for suspicious behavior: lateral movement (attacker moving between machines), credential theft attempts (pass-the-hash, pass-the-ticket), brute force attacks on domain controllers, reconnaissance activity (attacker mapping your network). If you run on-prem AD, this is essential.
+
+**4. Microsoft Defender for Cloud Apps — Cloud Access Security Broker (CASB)**
+Discovers and monitors cloud app usage across your organization. Key capabilities: Shadow IT discovery (finds 15,000+ cloud apps employees are using without IT approval), session controls (monitor and restrict what users do in cloud apps), DLP policies for cloud apps, and anomaly detection (detects unusual user behavior like massive downloads before resignation).
+
+**Data Residency and Regulatory Compliance:**
+Data residency controls WHERE your data is physically stored. This matters for regulations like GDPR (EU data must stay in EU) and government requirements.
+- **Microsoft EU Data Boundary:** Guarantees that EU customer data is stored and processed within the EU. Covers Exchange, SharePoint, OneDrive, and Teams data.
+- **Multi-Geo:** Allows organizations to store data in specific geographic regions on a per-user basis. A multinational company can store German employees' data in Germany and Japanese employees' data in Japan.
+- **Data Residency options** are available for M365 Enterprise customers and can be configured during tenant setup or via the Admin Center.
+
+This is increasingly important on the exam as global data privacy regulations expand.
+
+**Microsoft Sentinel — SIEM & SOAR**
+Cloud-native Security Information and Event Management (SIEM) and Security Orchestration, Automation, and Response (SOAR). Collects logs from ALL sources (M365, Azure, on-premises, third-party firewalls, AWS, GCP), uses AI and machine learning to detect threats, correlates alerts across all sources, and runs automated playbooks for response. Example: Alert triggers → playbook blocks user account → resets password → notifies SOC team → creates ticket in ServiceNow — all automatically in seconds.
+
+**Microsoft Secure Score:**
+Your organization's security health percentage. Each improvement action has a point value: Enable MFA for all users (+10 points), Block legacy authentication (+8 points), Enable audit logging (+3 points), Configure DLP policies (+5 points). Compare your score against similar organizations. Target: 80%+.
+
+**Microsoft Purview — Unified Compliance:**
+All compliance tools now live under the "Purview" brand:
+
+**Compliance Manager:** Pre-built assessments for 350+ regulations (GDPR, HIPAA, SOX, ISO 27001, PCI-DSS). Compliance Score with prioritized improvement actions. Generate audit-ready reports.
+
+**Sensitivity Labels:** Tags that travel WITH documents. A "Highly Confidential" label can encrypt the file, add watermarks, prevent forwarding, prevent printing, prevent copying, and set expiration dates. Even if the file is downloaded, emailed, or copied to a USB drive — the protection stays.
+
+**Data Loss Prevention (DLP):** Automatically detects sensitive data (credit cards, SSNs, medical records) and prevents inappropriate sharing. Works across Exchange, SharePoint, OneDrive, Teams, and endpoint devices.
+
+**Data Lifecycle Management:** Retention policies (keep all email for 7 years), retention labels (per-document policies), records management (declare immutable records), and disposition review.
+
+**eDiscovery:** Legal search across ALL M365 content. Core eDiscovery creates cases and places holds. Advanced eDiscovery (E5) adds AI-powered document review, near-duplicate detection, conversation threading, and themes analysis.
+
+**Insider Risk Management (E5):** Detects risky internal behavior using ML: mass file downloads before a resignation date, unusual sharing patterns, printing large volumes of sensitive documents, accessing sensitive data outside normal hours.
+
+**Information Barriers:** Prevent specific groups from communicating. Investment banking team cannot chat with the trading team (required by financial regulations to prevent insider trading).
+
+**Communication Compliance:** Monitor Teams messages and emails for policy violations — harassment, threats, regulatory compliance, insider trading language.
+
+**Service Trust Portal (servicetrust.microsoft.com):**
+Where Microsoft proves its own compliance. Download: SOC 1, SOC 2, SOC 3 audit reports, ISO 27001 certification, GDPR compliance documentation, penetration test results, data protection impact assessments. When an auditor asks "Show me proof that Microsoft meets security standards," this is your answer.
+
+**Microsoft Privacy Principles (six principles):**
+1. Control: You own your data. 2. Transparency: Microsoft tells you what it does with your data. 3. Security: Microsoft protects your data. 4. Legal protections: Microsoft defends your data rights. 5. No content-based targeting: No ads based on your email content. 6. Benefits to you: Data improves YOUR experience, not sold to advertisers.
+
+**Interview Tip:**
+"I implement defense-in-depth using M365 Defender XDR: Defender for Office 365 protects email, Defender for Endpoint protects devices, Defender for Identity monitors AD, and Defender for Cloud Apps discovers shadow IT. Sentinel provides SIEM/SOAR for cross-source correlation and automated response. For compliance, I use Compliance Manager for regulatory assessments, Sensitivity Labels for persistent document protection, DLP to prevent data leakage, and retention policies for legal requirements. Secure Score guides ongoing improvement — I target 80%+."`,
+quiz:[
+{q:"Microsoft Defender for Identity monitors:",o:["Email","Endpoints (laptops/phones)","On-premises Active Directory","Cloud applications"],a:2},
+{q:"Shadow IT is discovered using:",o:["Defender for Endpoint","Defender for Cloud Apps (CASB)","Azure Firewall","DLP policies"],a:1},
+{q:"Microsoft Sentinel is:",o:["An endpoint protection tool","A SIEM/SOAR platform for log analysis and automated response","An identity service","An email gateway"],a:1},
+{q:"Sensitivity Labels protect documents by:",o:["Only adding a header","Encrypting, watermarking, and restricting access — protection travels with the document","Only tracking who opens them","Only preventing printing"],a:1},
+{q:"Insider Risk Management detects:",o:["External hackers","Internal employees with risky behavior (mass downloads, unusual sharing)","Network intrusions","Malware infections"],a:1},
+{q:"The Service Trust Portal provides:",o:["User data and analytics","Microsoft's audit reports, compliance docs, and penetration test results","Application downloads","Technical support"],a:1}
+]},
+
+// ─── MODULE 4: PRICING & SUPPORT ───
+{mod:"Pricing & Support",id:"m4t1",title:"Licensing, Cost Optimization & Support Options",
+content:`Understanding M365 licensing is essential for both the exam and real-world consulting. Let's cover everything.
+
+**Per-User Licensing Model:**
+M365 licenses are assigned per user. Each license allows installation on up to 5 devices (5 PCs/Macs + 5 tablets + 5 phones). Users can access web versions from any additional devices. Annual commitment saves 15-20% vs monthly billing.
+
+**All Add-On Licenses:**
+On top of any base plan, you can add:
+- Microsoft 365 Copilot: $30/user/month (AI assistant in all apps)
+- Power BI Pro: $10/user/month (advanced business intelligence)
+- Visio Plan 2: $15/user/month (diagramming tool)
+- Project Plan 3: $30/user/month (project management)
+- Microsoft Teams Phone: $8/user/month (PSTN calling)
+- Audio Conferencing: $4/user/month (dial-in meeting numbers)
+- Defender for Endpoint P2: $5.20/user/month (advanced endpoint protection)
+
+**Trial Licenses:**
+Most M365 plans offer 30-day free trials. This lets you test features before committing. Smart admins use trials to demonstrate value to leadership before purchasing.
+
+**Cost Optimization Strategies:**
+1. **Right-size licenses:** Not everyone needs the most expensive plan. Analyze actual usage before assigning.
+2. **Use Frontline plans:** Shift workers, retail staff, and factory workers need F1/F3, not E3.
+3. **Check license utilization:** Admin Center → Reports → Usage. See who actually uses what. Reclaim unused licenses.
+4. **Annual over monthly:** 15-20% savings for committing annually.
+5. **Nonprofit and Education discounts:** Up to 75% off or FREE for qualifying organizations!
+6. **Remove departed employees promptly:** Every month a former employee's license stays assigned costs money.
+
+**Support Options:**
+
+**Self-Service (Free):**
+- Microsoft Learn (learn.microsoft.com): Free courses, learning paths, and certifications
+- Microsoft Q&A: Community forums with Microsoft engineers
+- M365 Admin Center: Built-in diagnostic tools, guided troubleshooting
+- Service Health Dashboard: Real-time status of all services
+
+**Microsoft FastTrack — The Hidden Gem (FREE with 150+ licenses!):**
+FastTrack is Microsoft's free deployment guidance service. Microsoft engineers help you:
+- Plan your M365 deployment strategy
+- Migrate email from on-premises Exchange or Google
+- Configure SharePoint, Teams, and OneDrive
+- Set up security (MFA, Conditional Access, DLP)
+- Train your users with adoption resources
+Available for: Exchange Online, SharePoint, OneDrive, Teams, Intune, Azure AD, Windows 11, Microsoft Defender, Power BI. Many organizations don't know about FastTrack and pay consultants for help they could get free!
+
+**Microsoft Unified Support:**
+Paid premium support. Dedicated Technical Account Manager (TAM), 24/7 critical situation support, proactive services (health checks, workshops), and designated support engineering. For large enterprises with complex environments.
+
+**Cloud Solution Provider (CSP) Model:**
+Many organizations buy M365 through a Microsoft Partner rather than directly from Microsoft.
+- Tier 1 (Direct CSP): Partner buys from Microsoft and sells directly to customer
+- Tier 2 (Indirect CSP): Partner works through a distributor
+Benefits: Single bill for all Microsoft services, local support from the partner, managed services, and often additional value-add services.
+
+**M365 SLAs:**
+Microsoft provides financially-backed SLAs for M365 services. The standard SLA is 99.9% uptime (about 8.76 hours of downtime per year). If Microsoft fails to meet the SLA, you receive service credits on your next bill. Check real-time service status at status.office.com.
+
+**Real-World Scenario — Complete License Audit:**
+A company with 2,000 employees has been on M365 E5 ($57/user) across the board since their initial deployment. The new CIO asks for a cost review.
+
+Analysis findings:
+- 200 IT/Security/Executives → Actually use E5 features (Defender for Endpoint, Phone System, PIM)
+- 1,200 office workers → Only use Office apps, email, Teams, SharePoint
+- 600 store employees → Only use Teams mobile app and basic email on shared devices
+- 50 licenses assigned to departed employees → Paying $2,850/month for nothing!
+
+Optimized licensing:
+- 200 users → E5 ($57): $11,400/month
+- 1,200 users → E3 ($36): $43,200/month
+- 600 users → F3 ($8): $4,800/month
+- 50 departed → Remove immediately: $0
+
+Before: $114,000/month ($1,368,000/year)
+After: $59,400/month ($712,800/year)
+**Annual savings: $655,200**
+
+The CIO is now your biggest fan.
+
+**Interview Tip:**
+"I optimize M365 licensing by matching plans to user personas using the admin center's utilization reports. Not everyone needs E5 — I segment users into personas: F-plans for frontline, E3 for standard information workers, E5 only for those requiring advanced security or analytics. I leverage FastTrack (free with 150+ licenses) for deployment assistance, enforce annual commitment for 15-20% savings, and regularly audit for unused licenses. The CSP model through a Microsoft partner can provide additional managed services and consolidated billing."`,
+quiz:[
+{q:"FastTrack is free with how many licenses?",o:["Any amount — always free","50+ licenses","150+ licenses","500+ licenses"],a:2},
+{q:"Each M365 user license can be installed on how many devices?",o:["1 device only","3 devices","5 PCs/Macs + 5 tablets + 5 phones","Unlimited devices"],a:2},
+{q:"The standard M365 SLA guarantees:",o:["95% uptime","99% uptime","99.9% uptime (financially backed)","100% uptime"],a:2},
+{q:"A company has 50 licenses assigned to former employees. What should the admin do?",o:["Leave them — they might come back","Remove licenses immediately to stop paying","Convert to shared mailboxes","Wait until the annual review"],a:1},
+{q:"The CSP (Cloud Solution Provider) model means:",o:["Microsoft sells directly to all customers","Partners sell and manage M365 licenses for customers","Customers must use Azure","Only government customers can use CSP"],a:1}
+]}
+];
+
+// ════════════════════════════════════════════════
+// UI COMPONENT
+// ════════════════════════════════════════════════
+function MS900App() {
+  const [view, setView] = useState("home");
+  const [topicIdx, setTopicIdx] = useState(0);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [ans, setAns] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [prog, setProg] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("ms900-prog")) || {}; } catch { return {}; }
+  });
+  const [intIdx, setIntIdx] = useState(0);
+  const [intShow, setIntShow] = useState(false);
+  const topRef = useRef(null);
+
+  useEffect(() => { try { localStorage.setItem("ms900-prog", JSON.stringify(prog)); } catch {} }, [prog]);
+  useEffect(() => { topRef.current?.scrollIntoView({ behavior: "smooth" }); }, [topicIdx, view]);
+
+  const topic = L[topicIdx];
+  const modules = [...new Set(L.map(l => l.mod))];
+  const getModTopics = (m) => L.filter(l => l.mod === m);
+  const pct = Math.round(Object.keys(prog).filter(k => prog[k]).length / L.length * 100);
+  const markDone = () => setProg(p => ({ ...p, [topic.id]: true }));
+  const c = COURSE.color;
+
+  const Render = ({ text }) => {
+    return text.split("\n").map((line, i) => {
+      if (!line && i > 0) return <div key={i} style={{ height: 14 }} />;
+      let html = line
+        .replace(/\*\*(\d+)\.\s([^*]+)\*\*/g, `<span style="color:${c};font-weight:700;font-size:16px">$1. $2</span>`)
+        .replace(/\*\*([^*]+)\*\*/g, `<strong style="color:${c}">$1</strong>`)
+        .replace(/\*([^*]+)\*/g, `<em style="color:#a0aec0">$1</em>`)
+        ;
+      if (line.startsWith("- ")) html = `<span style="color:${c};margin-right:8px">●</span>${line.slice(2)}`;
+      return <div key={i} style={{ marginBottom: 6, lineHeight: 1.85, fontSize: 15.5, color: "#dce1eb" }} dangerouslySetInnerHTML={{ __html: html }} />;
+    });
+  };
+
+  const PB = ({ p, h = 8 }) => (
+    <div style={{ width: "100%", height: h, borderRadius: h, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+      <div style={{ width: `${p}%`, height: "100%", borderRadius: h, background: `linear-gradient(90deg, ${c}, ${c}cc)`, transition: "width 0.6s" }} />
+    </div>
+  );
+
+  const Card = ({ children, onClick, style = {}, hoverable = true }) => (
+    <div onClick={onClick}
+      onMouseEnter={hoverable ? e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.transform = "translateY(-1px)"; } : undefined}
+      onMouseLeave={hoverable ? e => { e.currentTarget.style.background = "rgba(255,255,255,0.025)"; e.currentTarget.style.transform = "none"; } : undefined}
+      style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 22, marginBottom: 14, transition: "all 0.2s", cursor: onClick ? "pointer" : "default", ...style }}>
+      {children}
+    </div>
+  );
+
+  const Btn = ({ children, onClick, bg = c, color = "#fff", disabled, style = {} }) => (
+    <button onClick={onClick} disabled={disabled}
+      style={{ padding: "12px 24px", borderRadius: 12, border: "none", cursor: disabled ? "default" : "pointer", fontWeight: 600, fontSize: 14, background: bg, color, transition: "all 0.15s", opacity: disabled ? 0.4 : 1, ...style }}>
+      {children}
+    </button>
+  );
+
+  const Chip = ({ children, bg, color: clr }) => (
+    <span style={{ display: "inline-block", padding: "5px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: bg || c + "18", color: clr || c }}>{children}</span>
+  );
+
+  // ══ HOME ══
+  if (view === "home") return (
+    <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px 16px 60px" }}>
+        <div style={{ textAlign: "center", padding: "32px 0 20px" }}>
+          <div style={{ fontSize: 60, marginBottom: 8 }}>{COURSE.icon}</div>
+          <h1 style={{ fontSize: 32, fontWeight: 900, color: c, margin: "0 0 6px" }}>MS-900</h1>
+          <h2 style={{ fontSize: 20, fontWeight: 600, color: "#e8ecf4", margin: "0 0 8px" }}>Microsoft 365 Fundamentals</h2>
+          <p style={{ color: "#8892a6", fontSize: 14, margin: "0 0 16px" }}>Complete course by <span style={{ color: "#FF6B35", fontWeight: 700 }}>Ram Mohan Pathak</span></p>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "center", maxWidth: 400, margin: "0 auto" }}>
+            <PB p={pct} />
+            <span style={{ fontSize: 16, fontWeight: 700, color: c }}>{pct}%</span>
+            <span style={{ fontSize: 12, color: "#5a6478" }}>{Object.keys(prog).filter(k => prog[k]).length}/{L.length} complete</span>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div style={{ display: "flex", gap: 10, margin: "0 0 20px", flexWrap: "wrap" }}>
+          {[{ v: L.length, l: "Lessons", ic: "📖" }, { v: L.reduce((a, l) => a + l.quiz.length, 0), l: "Quiz Questions", ic: "📝" }, { v: COURSE.interview.length, l: "Interview Q's", ic: "🎙️" }, { v: COURSE.roles.length, l: "Job Roles", ic: "💼" }].map((s, i) => (
+            <div key={i} style={{ flex: "1 1 100px", background: "rgba(255,255,255,0.025)", borderRadius: 14, padding: "14px 10px", textAlign: "center", border: "1px solid rgba(255,255,255,0.04)" }}>
+              <div style={{ fontSize: 14 }}>{s.ic}</div>
+              <div style={{ fontSize: 24, fontWeight: 800, color: c }}>{s.v}</div>
+              <div style={{ fontSize: 11, color: "#8892a6" }}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Modules & Topics */}
+        {modules.map((mod, mi) => {
+          const topics = getModTopics(mod);
+          const modDone = topics.filter(t => prog[t.id]).length;
+          return (
+            <div key={mi} style={{ marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 8, background: c + "20", color: c, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14 }}>{mi + 1}</div>
+                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: c, flex: 1 }}>{mod}</h3>
+                <span style={{ fontSize: 12, color: "#5a6478" }}>{modDone}/{topics.length}</span>
+              </div>
+              {topics.map((t, ti) => {
+                const done = prog[t.id];
+                const idx = L.indexOf(t);
+                return (
+                  <Card key={t.id} onClick={() => { setTopicIdx(idx); setShowQuiz(false); setAns({}); setSubmitted(false); setView("topic"); }}
+                    style={{ borderColor: done ? "#34d39930" : "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", gap: 12, padding: 16 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: "50%", background: done ? "#34d39912" : "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0, color: done ? "#34d399" : "#5a6478" }}>
+                      {done ? "✅" : `${mi + 1}.${ti + 1}`}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, color: "#e8ecf4" }}>{t.title}</div>
+                      <div style={{ fontSize: 11, color: "#5a6478", marginTop: 2 }}>📝 {t.quiz.length} quiz questions</div>
+                    </div>
+                    <span style={{ fontSize: 18, color: "#5a6478" }}>→</span>
+                  </Card>
+                );
+              })}
+            </div>
+          );
+        })}
+
+        {/* Interview & Career */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 10 }}>
+          <Card hoverable={false} onClick={() => setView("interview")} style={{ cursor: "pointer" }}>
+            <h3 style={{ margin: "0 0 6px", fontSize: 16, color: "#a78bfa" }}>🎙️ Interview Prep</h3>
+            <p style={{ fontSize: 12, color: "#8892a6", margin: 0 }}>{COURSE.interview.length} real interview questions with model answers</p>
+          </Card>
+          <Card hoverable={false} onClick={() => setView("career")} style={{ cursor: "pointer" }}>
+            <h3 style={{ margin: "0 0 6px", fontSize: 16, color: "#34d399" }}>💼 Career & Resume</h3>
+            <p style={{ fontSize: 12, color: "#8892a6", margin: 0 }}>{COURSE.roles.length} job roles + resume bullet points</p>
+          </Card>
+        </div>
+
+        <div style={{ textAlign: "center", padding: "24px 0", color: "#3d4556", fontSize: 11 }}>
+          Smart Tutor Ram — MS-900 Complete Course by Ram Mohan Pathak
+        </div>
+      </div>
+      <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:3px}button:hover{filter:brightness(1.08)}button:active{transform:scale(0.98)}`}</style>
+    </div>
+  );
+
+  // ══ TOPIC VIEW ══
+  if (view === "topic") {
+    const score = topic.quiz.filter((q, i) => ans[i] === q.a).length;
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <div ref={topRef} />
+        <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(10,14,26,0.92)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 50, backdropFilter: "blur(16px)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: "#e8ecf4", cursor: "pointer", fontSize: 18 }}>←</button>
+            <span style={{ fontWeight: 800, fontSize: 14, color: c }}>MS-900</span>
+          </div>
+          <span style={{ fontSize: 12, color: "#5a6478" }}>{topicIdx + 1} / {L.length}</span>
+        </nav>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "20px 16px 60px" }}>
+          <div style={{ marginBottom: 16 }}>
+            <Chip>{topic.mod}</Chip>
+            <h2 style={{ margin: "10px 0 0", fontSize: 24, fontWeight: 800, color: "#e8ecf4" }}>{topic.title}</h2>
+          </div>
+          <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "rgba(255,255,255,0.02)", borderRadius: 12, padding: 4 }}>
+            <Btn onClick={() => setShowQuiz(false)} bg={!showQuiz ? c : "transparent"} color={!showQuiz ? "#fff" : "#8892a6"} style={{ flex: 1 }}>📖 Lesson</Btn>
+            <Btn onClick={() => { setShowQuiz(true); setAns({}); setSubmitted(false); }} bg={showQuiz ? c : "transparent"} color={showQuiz ? "#fff" : "#8892a6"} style={{ flex: 1 }}>📝 Quiz ({topic.quiz.length})</Btn>
+          </div>
+
+          {!showQuiz ? (
+            <Card hoverable={false} style={{ padding: 32, lineHeight: 1.85 }}>
+              <Render text={topic.content} />
+              <div style={{ marginTop: 28, paddingTop: 18, borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                {!prog[topic.id] ? (
+                  <Btn onClick={markDone} bg="#34d399" color="#000">✅ Mark Complete</Btn>
+                ) : (
+                  <Chip bg="#34d39918" color="#34d399">✅ Completed</Chip>
+                )}
+                {topicIdx < L.length - 1 && (
+                  <Btn onClick={() => { setTopicIdx(topicIdx + 1); setShowQuiz(false); setAns({}); setSubmitted(false); }} bg={c + "20"} color={c}>Next Topic →</Btn>
+                )}
+              </div>
+            </Card>
+          ) : (
+            <div>
+              {topic.quiz.map((q, qi) => {
+                const sel = ans[qi];
+                const ok = submitted && sel === q.a;
+                const bad = submitted && sel !== undefined && sel !== q.a;
+                return (
+                  <Card key={qi} hoverable={false} style={{ borderColor: ok ? "#34d39930" : bad ? "#f8717130" : "rgba(255,255,255,0.04)" }}>
+                    <p style={{ margin: "0 0 14px", fontWeight: 700, fontSize: 15, color: "#e8ecf4" }}>Question {qi + 1}: {q.q}</p>
+                    {q.o.map((opt, oi) => {
+                      const isSel = sel === oi;
+                      const isCorrect = submitted && oi === q.a;
+                      const isWrong = submitted && isSel && oi !== q.a;
+                      return (
+                        <button key={oi} onClick={() => !submitted && setAns(p => ({ ...p, [qi]: oi }))}
+                          style={{ display: "block", width: "100%", textAlign: "left", padding: "14px 18px", marginBottom: 8, borderRadius: 12, border: `1px solid ${isCorrect ? "#34d39930" : isWrong ? "#f8717130" : isSel ? c + "30" : "transparent"}`, background: isCorrect ? "#34d39912" : isWrong ? "#f8717112" : isSel ? c + "12" : "rgba(255,255,255,0.02)", color: isCorrect ? "#34d399" : isWrong ? "#f87171" : isSel ? c : "#e8ecf4", cursor: submitted ? "default" : "pointer", fontWeight: 500, fontSize: 14, transition: "all 0.15s" }}>
+                          {String.fromCharCode(65 + oi)}. {opt}{isCorrect && " ✅"}{isWrong && " ❌"}
+                        </button>
+                      );
+                    })}
+                  </Card>
+                );
+              })}
+              {!submitted ? (
+                <Btn onClick={() => setSubmitted(true)} disabled={Object.keys(ans).length !== topic.quiz.length}
+                  style={{ width: "100%", padding: 14, fontSize: 16 }}>Submit Answers</Btn>
+              ) : (
+                <Card hoverable={false} style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 40 }}>{score === topic.quiz.length ? "🎉" : score >= topic.quiz.length * 0.6 ? "👏" : "📚"}</div>
+                  <h3 style={{ margin: "8px 0", color: "#e8ecf4", fontSize: 20 }}>Score: {score}/{topic.quiz.length}</h3>
+                  <p style={{ color: "#8892a6", fontSize: 14 }}>{score === topic.quiz.length ? "Perfect! You've mastered this topic!" : "Review incorrect answers and try again."}</p>
+                  <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 12 }}>
+                    <Btn onClick={() => { setAns({}); setSubmitted(false); }} bg={c + "20"} color={c}>Retry Quiz</Btn>
+                    {topicIdx < L.length - 1 && <Btn onClick={() => { setTopicIdx(topicIdx + 1); setShowQuiz(false); setAns({}); setSubmitted(false); }}>Next Topic →</Btn>}
+                  </div>
+                </Card>
+              )}
+            </div>
+          )}
+        </div>
+        <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:3px}button:hover{filter:brightness(1.08)}button:active{transform:scale(0.98)}`}</style>
+      </div>
+    );
+  }
+
+  // ══ INTERVIEW VIEW ══
+  if (view === "interview") {
+    const q = COURSE.interview[intIdx];
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(10,14,26,0.92)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "0 16px", display: "flex", alignItems: "center", height: 50, gap: 10, backdropFilter: "blur(16px)" }}>
+          <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: "#e8ecf4", cursor: "pointer", fontSize: 18 }}>←</button>
+          <span style={{ fontWeight: 800, fontSize: 14, color: "#a78bfa" }}>🎙️ Interview Prep</span>
+          <span style={{ marginLeft: "auto", fontSize: 12, color: "#5a6478" }}>{intIdx + 1} / {COURSE.interview.length}</span>
+        </nav>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "20px 16px 60px" }}>
+          <PB p={(intIdx + 1) / COURSE.interview.length * 100} h={4} />
+          <Card hoverable={false} style={{ marginTop: 16 }}>
+            <p style={{ fontSize: 11, color: "#5a6478", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 8px" }}>Interviewer asks:</p>
+            <h3 style={{ margin: 0, fontSize: 20, lineHeight: 1.5, color: "#e8ecf4" }}>"{q.q}"</h3>
+          </Card>
+          {!intShow ? (
+            <Btn onClick={() => setIntShow(true)} bg="linear-gradient(135deg, #7c3aed, #ec4899)" style={{ width: "100%", padding: 14, fontSize: 16 }}>💡 Reveal Model Answer</Btn>
+          ) : (
+            <Card hoverable={false} style={{ borderColor: "#7c3aed25" }}>
+              <p style={{ fontSize: 11, color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 10px" }}>Model Answer:</p>
+              <Render text={q.a} />
+            </Card>
+          )}
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+            <Btn onClick={() => { setIntIdx(i => i - 1); setIntShow(false); }} disabled={intIdx === 0} bg="rgba(255,255,255,0.04)" color="#e8ecf4" style={{ flex: 1 }}>← Previous</Btn>
+            <Btn onClick={() => { setIntIdx(i => i + 1); setIntShow(false); }} disabled={intIdx === COURSE.interview.length - 1} style={{ flex: 1 }}>Next →</Btn>
+          </div>
+        </div>
+        <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:3px}button:hover{filter:brightness(1.08)}button:active{transform:scale(0.98)}`}</style>
+      </div>
+    );
+  }
+
+  // ══ CAREER VIEW ══
+  if (view === "career") return (
+    <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+      <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(10,14,26,0.92)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "0 16px", display: "flex", alignItems: "center", height: 50, gap: 10, backdropFilter: "blur(16px)" }}>
+        <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: "#e8ecf4", cursor: "pointer", fontSize: 18 }}>←</button>
+        <span style={{ fontWeight: 800, fontSize: 14, color: "#34d399" }}>💼 Career Guide</span>
+      </nav>
+      <div style={{ maxWidth: 800, margin: "0 auto", padding: "20px 16px 60px" }}>
+        <Card hoverable={false}>
+          <h3 style={{ margin: "0 0 14px", fontSize: 18, color: "#34d399" }}>💼 Roles You Can Apply For After MS-900</h3>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {COURSE.roles.map((r, i) => <Chip key={i} bg="#34d39912" color="#34d399">{r}</Chip>)}
+          </div>
+        </Card>
+        <Card hoverable={false}>
+          <h3 style={{ margin: "0 0 14px", fontSize: 18, color: c }}>📄 Resume Bullet Points</h3>
+          <p style={{ fontSize: 13, color: "#8892a6", margin: "0 0 16px" }}>Copy these to your resume under "Technical Skills" or "Experience":</p>
+          {COURSE.resume.map((b, i) => (
+            <div key={i} style={{ display: "flex", gap: 10, marginBottom: 12, alignItems: "flex-start" }}>
+              <span style={{ color: c, fontSize: 16, marginTop: 2, flexShrink: 0 }}>●</span>
+              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7, color: "#e8ecf4" }}>{b}</p>
+            </div>
+          ))}
+        </Card>
+      </div>
+      <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:3px}button:hover{filter:brightness(1.08)}button:active{transform:scale(0.98)}`}</style>
+    </div>
+  );
+
+  return null;
+}
+
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(MS900App));
+</script>
+</body>
+</html>

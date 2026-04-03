@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Tutor Ram - AZ-700: Azure Network Engineer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js"></script>
+<style>body{margin:0;padding:0;background:#0a0e1a}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+
+const COURSE = {
+  title: "AZ-700: Azure Network Engineer", icon: "🌐", color: "#50E6FF",
+  desc: "Design and implement hybrid networking, routing, load balancing, and network security in Azure.",
+  roles: ["Azure Network Engineer","Cloud Network Architect","Sr. Network Engineer","Network Security Engineer","Hybrid Cloud Network Specialist","WAN/SD-WAN Engineer","Infrastructure Architect"],
+  resume: ["Designed hub-spoke topologies with Azure Firewall, UDR, and network segmentation","Configured VPN Gateway (S2S/P2S/active-active), ExpressRoute with Global Reach and failover","Deployed Azure Virtual WAN with secured hubs and custom routing for 50+ branches","Implemented all load balancers: Azure LB (HA Ports), App Gateway (WAF v2), Front Door, Traffic Manager","Configured Private Link/Endpoints, NAT Gateway, Azure Route Server for dynamic NVA routing","Monitored with Network Watcher (all tools), NSG Flow Logs v2, and Traffic Analytics"],
+  interview: [
+    {q:"Design a global network architecture for a multi-region application.",a:"Hub-spoke topology per region with Azure Firewall in each hub for east-west and north-south traffic inspection. Azure Front Door as global entry point with WAF, CDN, and anycast routing to the nearest region.\n\nHybrid connectivity: ExpressRoute as primary (private, guaranteed bandwidth) with VPN Gateway as failover. For branches: Azure Virtual WAN with secured hubs for automated mesh connectivity.\n\nSecurity: Private Endpoints for all PaaS services (no public exposure). NSGs on every subnet. Azure Bastion in the hub for admin access. DDoS Protection Standard for public-facing services.\n\nMonitoring: Network Watcher with Connection Monitor for ongoing connectivity checks. NSG Flow Logs v2 with Traffic Analytics for visibility and security insights."},
+    {q:"How do you troubleshoot connectivity between on-premises and Azure?",a:"Systematic approach:\n1. Check VPN Gateway or ExpressRoute health in the portal — is the connection showing 'Connected'?\n2. Verify BGP routes — check effective routes on the VM NIC to see if on-prem routes are advertised\n3. Test with Network Watcher Connection Troubleshoot — end-to-end test\n4. Check NSG rules — use IP Flow Verify to confirm traffic isn't being blocked\n5. Review Azure Firewall rules and logs — is traffic being denied?\n6. Check UDR — is traffic being routed correctly or forced through an unexpected path?\n7. Verify on-premises firewall/router — confirm Azure IP ranges are allowed\n8. Packet capture on both sides for deep analysis"},
+    {q:"When do you use each type of load balancer?",a:"Layer 4 Regional (TCP/UDP): Azure Load Balancer — for non-HTTP traffic like SQL, custom protocols, or as internal LB for NVAs with HA Ports.\n\nLayer 7 Regional (HTTP): Application Gateway — for URL-based routing, SSL termination, cookie affinity, and WAF protection. Autoscales 0-125 instances.\n\nDNS-based Global: Traffic Manager — for cross-region failover of any protocol using DNS routing (Priority, Weighted, Performance, Geographic).\n\nLayer 7 Global (HTTP): Azure Front Door — for global anycast with CDN, WAF, split traffic for A/B testing, and instant failover.\n\nI often layer them: Front Door globally → App Gateway per region → Internal LB for backend pools."}
+  ]
+};
+const L = [
+{mod:"Hybrid Networking",id:"az700-1",title:"VPN Gateway Deep Dive",
+content:"Let us start with a question: How does your office connect to Azure securely? The answer is VPN Gateway — it creates an encrypted tunnel over the public internet between your on-premises network and Azure.\n\n**What is a VPN Gateway?**\nThink of it like a secure, invisible pipe between your office and Azure. Even though your data travels over the public internet, it is fully encrypted so nobody can read it. It is like sending a locked briefcase through a public postal service — anyone can carry it, but only you and the recipient have the key.\n\n**Connection Types Explained:**\n\n**Site-to-Site (S2S) — Connect Your Office:**\nAn always-on IPSec/IKE tunnel between your on-premises VPN device (Cisco, Palo Alto, Fortinet, etc.) and Azure VPN Gateway. Once configured, every device in your office can access Azure resources as if they were on the same network. Your on-premises VPN device needs a public IP address.\n\n**Point-to-Site (P2S) — Connect Individual Laptops:**\nFor remote workers connecting from their laptops — like working from home or a coffee shop. The user runs a VPN client that creates a tunnel from their individual device to Azure. Authentication options: Azure AD authentication (best — users sign in with work credentials, supports MFA and Conditional Access), certificate-based (deploy client certificates), or RADIUS (integrate with existing RADIUS/NPS server).\n\nProtocols: OpenVPN (recommended, works on Windows/Mac/Linux/iOS/Android), IKEv2 (native on iOS and macOS, very stable), SSTP (Windows only, works through restrictive firewalls because it uses port 443).\n\n**VNet-to-VNet — Connect Two Azure Networks:**\nEncrypted tunnel between two Azure VNets, even in different regions. Alternative to VNet peering when you need encryption in transit.\n\n**Gateway SKUs (Size Matters!):**\nBasic: 100 Mbps, 10 S2S tunnels — for development and testing only, not production.\nVpnGw1: 650 Mbps, 30 tunnels — small production workloads.\nVpnGw2: 1 Gbps, 30 tunnels — medium enterprises.\nVpnGw3: 1.25 Gbps, 30 tunnels — larger workloads.\nVpnGw5: 10 Gbps, 100 tunnels — enterprise grade, maximum performance.\n\n**Active-Active Configuration — High Availability:**\nDeploy two gateway instances with two public IPs. Both tunnels are active simultaneously. If one instance fails, the other handles all traffic automatically. Always use Active-Active for production — a single gateway is a single point of failure.\n\n**BGP (Border Gateway Protocol) — Dynamic Routing:**\nInstead of manually creating static routes, BGP automatically exchanges route information between your on-premises network and Azure. Azure default ASN is 65515. When you add a new subnet on-premises, BGP automatically advertises it to Azure — no manual UDR changes needed.\n\n**Forced Tunneling:**\nRoute ALL internet-bound traffic from Azure back through your on-premises network for inspection by your corporate firewall. Implemented via UDR: 0.0.0.0/0 pointing to VPN Gateway. Required by some compliance regulations.\n\n**Troubleshooting VPN Issues:**\nNetwork Watcher VPN Diagnostics: checks gateway health, tunnel status, IKE negotiation logs. Common problems: shared key mismatch between Azure and on-prem device, incompatible IPSec/IKE parameters (encryption algorithm, DH group), on-premises device not in Microsoft supported devices list, BGP peer down or incorrect ASN.\n\n**Real-World Scenario:**\nA company with 3 offices (New York, London, Tokyo) and 200 remote workers needs Azure connectivity. Design: S2S VPN from each office to Azure (3 tunnels). P2S with Azure AD authentication for remote workers. Active-Active gateway (VpnGw2) for redundancy. BGP for dynamic routing. Total cost: approximately $350/month for the gateway.\n\n**Interview Tip:**\n\"I deploy Active-Active VPN Gateways with BGP for production — this eliminates single points of failure and removes manual route management. P2S with Azure AD authentication for remote workers because it integrates with Conditional Access for Zero Trust. I size the gateway based on throughput requirements and number of tunnels.\"",
+quiz:[{q:"VPN Gateway Active-Active uses:",o:["1 public IP","2 public IPs","No public IPs","3 public IPs"],a:1},{q:"P2S with Azure AD auth uses:",o:["OpenVPN protocol","SSTP only","IKEv2 only","All protocols"],a:0},{q:"VpnGw5 max throughput:",o:["1 Gbps","5 Gbps","10 Gbps","100 Gbps"],a:2},{q:"Azure default BGP ASN:",o:["65000","65515","64512","12076"],a:1}]},
+
+{mod:"Hybrid Networking",id:"az700-2",title:"ExpressRoute — Private Dedicated Connection",
+content:"ExpressRoute is fundamentally different from VPN — it's a private, dedicated connection from your datacenter to Azure that NEVER touches the public internet. Think of VPN as driving on public roads (encrypted, but still shared), while ExpressRoute is your own private highway.\n\n**Why ExpressRoute Instead of VPN?**\nVPN has limitations: it goes over the public internet (variable latency, occasional packet loss), maximum ~10 Gbps, and encryption overhead reduces throughput. ExpressRoute solves all of these: guaranteed bandwidth, consistent low latency, up to 100 Gbps, and private routing.\n\nBanks use ExpressRoute for trading platforms where milliseconds matter. Hospitals use it for large medical imaging transfers. Any organization with serious bandwidth or compliance needs should consider ExpressRoute.\n\n**Two Types of Peering:**\n**Azure Private Peering:** Access your VNets and VMs over the private connection. This is the most common use case — your office connects directly to your Azure virtual network.\n**Microsoft Peering:** Access Microsoft 365 and Azure PaaS services (Storage, SQL Database) over the private connection instead of the internet.\n\n**Bandwidth Options:**\n50 Mbps, 100 Mbps, 200 Mbps, 500 Mbps, 1 Gbps, 2 Gbps, 5 Gbps, 10 Gbps — and with ExpressRoute Direct, up to 100 Gbps on dedicated ports.\n\n**Connectivity Models (How You Connect):**\n**Cloud Exchange Co-location:** You're physically located in the same facility as the connectivity provider (Equinix, CyrusOne). Shortest path, lowest latency.\n**Point-to-Point Ethernet:** Direct fiber optic cable from your datacenter to Azure. Dedicated line, maximum control.\n**Any-to-Any IPVPN/MPLS:** Your existing enterprise WAN (MPLS network) connects to Azure as just another site. Easiest if you already have MPLS.\n**ExpressRoute Direct:** Dedicated 10 Gbps or 100 Gbps ports directly into Microsoft's edge routers. For organizations with massive bandwidth needs.\n\n**Key Features:**\n**FastPath:** Bypasses the ExpressRoute virtual network gateway for ultra-low latency data path to VNet resources. Essential for latency-sensitive workloads.\n**Global Reach:** This is powerful — connect two on-premises sites THROUGH Microsoft's backbone. Your London office talks to your New York office via Microsoft's global network, not your own WAN. Eliminates the need for expensive international MPLS circuits.\n\n**The Enterprise Pattern — ExpressRoute + VPN Failover:**\nExpressRoute as the primary connection (fast, reliable, private). VPN Gateway as automatic failover — if ExpressRoute goes down (circuit maintenance, provider issue), traffic automatically routes over VPN. Users notice a brief slowdown but no outage.\n\n**Real-World Scenario:**\nA global bank with trading floors in London and New York: ExpressRoute Direct (100 Gbps) for the primary trading connection. ExpressRoute Global Reach connects London and NYC through Microsoft's backbone. VPN Gateway as failover for each site. Result: sub-5ms latency for trades, guaranteed bandwidth, automatic failover.\n\n**Interview Tip:**\n\"ExpressRoute for guaranteed bandwidth, low latency, and regulatory compliance (data never traverses public internet). Global Reach for connecting on-premises sites through Microsoft backbone. Always deploy VPN Gateway as failover. FastPath for latency-critical workloads.\"\n",
+quiz:[{q:"ExpressRoute max bandwidth:",o:["10 Gbps","40 Gbps","100 Gbps (Direct)","1 Tbps"],a:2},{q:"Global Reach connects:",o:["VNets to VNets","On-prem sites through MS backbone","Azure to AWS","DNS servers"],a:1},{q:"FastPath does:",o:["Speeds up VPN","Bypasses ER gateway for low latency","Compresses data","Load balances"],a:1}]},
+
+{mod:"Hybrid Networking",id:"az700-3",title:"Azure Virtual WAN",
+content:"Azure Virtual WAN solves a very specific problem: what happens when your network grows to 50 branch offices, 10 Azure VNets, and ExpressRoute circuits? Managing all those VPN tunnels, peering connections, and route tables manually becomes a nightmare. Virtual WAN is Microsoft's managed networking backbone that handles it all.\n\n**The Problem VWAN Solves:**\nTraditional hub-spoke: You build a hub VNet, deploy a VPN Gateway, peer 10 spoke VNets, configure route tables, set up BGP... then repeat for each region. Add 50 branch offices, each needing a VPN tunnel. Add ExpressRoute. Now manage all the routing between branches, VNets, and regions manually. At scale, this is nearly impossible without a large networking team.\n\nVirtual WAN: Microsoft manages the hub infrastructure. You define your branches, VNets, and circuits — VWAN handles all the routing, connectivity, and transit automatically. Hub-to-hub traffic flows over Microsoft's backbone. Branches can talk to each other automatically through the managed mesh.\n\n**Architecture:**\nVirtual WAN resource (top level) → Regional Hubs (managed VNets in each region, auto-provisioned) → Connections (VPN sites, ExpressRoute circuits, VNet links, P2S gateways).\n\n**SKUs:**\n**Basic:** S2S VPN only. For simple branch-to-Azure connectivity.\n**Standard:** Everything — S2S VPN, ExpressRoute, P2S, VNet connections, AND hub-to-hub transit over Microsoft backbone. Auto-mesh between regional hubs.\n\n**Secured Virtual Hub:**\nAdd Azure Firewall to a VWAN hub. ALL traffic — branch-to-branch, branch-to-VNet, VNet-to-VNet, internet-bound — flows through the firewall for inspection. This is centralized security at scale.\n\n**Custom Route Tables:**\nIsolate traffic between environments. \"Dev branches can reach Dev VNets but NOT Production VNets.\" \"Finance VNets are isolated from HR VNets except through the firewall.\" Essential for compliance.\n\n**Routing Intent:**\nSimplified routing policy — instead of complex route tables, just two toggles: \"Route all internet traffic through Azure Firewall\" and \"Route all private traffic through Azure Firewall.\" Microsoft handles the underlying route table complexity.\n\n**When VWAN vs Traditional Hub-Spoke?**\nVWAN: 10+ branches, need auto-mesh between regions, want Microsoft to manage hub infrastructure, SD-WAN integration.\nTraditional: Fewer branches, need maximum control over every routing decision, custom NVAs (Palo Alto, Cisco), specific compliance requiring manual route management.\n\n**Real-World Scenario:**\nA retail company with 200 stores across the US, each with an SD-WAN device. Before VWAN: 200 individual VPN tunnels to manage, manual route tables, no store-to-store connectivity. After VWAN Standard with Secured Hubs: SD-WAN devices auto-connect to nearest regional hub. Stores in the same region talk through the local hub. Stores in different regions talk through hub-to-hub transit. All internet traffic inspected by Azure Firewall. Custom route tables isolate POS systems from corporate network. Time to deploy: 2 days vs 2 months.\n\n**Interview Tip:**\n\"Virtual WAN for organizations with 10+ branches needing managed, scalable connectivity. Standard SKU for full mesh with hub-to-hub transit. Secured Hubs with Azure Firewall for centralized traffic inspection. Routing Intent simplifies policy management. Custom route tables for environment isolation.\"\n",
+quiz:[{q:"VWAN Standard SKU supports:",o:["S2S VPN only","Everything including hub-to-hub","Only ExpressRoute","Only P2S"],a:1},{q:"Secured Virtual Hub includes:",o:["Azure Bastion","Azure Firewall","App Gateway","CDN"],a:1},{q:"Hub-to-hub traffic goes over:",o:["Public internet","Microsoft backbone","VPN tunnel","ExpressRoute only"],a:1}]},
+
+{mod:"Core Networking",id:"az700-4",title:"Routing, Route Server & NAT Gateway",
+content:"Routing determines WHERE packets go. Understanding route priority, Route Server, and NAT Gateway is essential for controlling traffic flow in Azure.\n\n**Route Priority — Who Wins?**\nWhen multiple routes exist for the same destination, Azure uses this priority:\n1. User-Defined Routes (UDR) — HIGHEST priority. Your explicit rules always win.\n2. BGP routes — Dynamic routes from VPN Gateway, ExpressRoute, or Route Server.\n3. System routes — Azure's default routing. Lowest priority.\n\n**The Most Critical UDR Pattern:**\nCreate a route table with: Destination 0.0.0.0/0 (all traffic) → Next Hop: Azure Firewall's private IP address. Apply this route table to every spoke subnet in your hub-spoke topology. Result: ALL internet-bound traffic from every spoke MUST pass through the Azure Firewall for inspection. Without this, VMs route directly to the internet, bypassing your firewall entirely.\n\n**Azure Route Server — Dynamic Routing for NVAs:**\nMany enterprises run third-party Network Virtual Appliances (NVAs) like Palo Alto, Cisco, or Fortinet in Azure. The problem: every time the NVA's routing changes, you'd need to manually update UDRs. Route Server solves this by enabling BGP between NVAs and Azure VNets. The NVA dynamically advertises routes — no manual UDR management. Supports active-active NVAs for high availability.\n\n**NAT Gateway:**\nWithout NAT Gateway, each VM uses its own public IP for outbound traffic (or random SNAT IPs from the load balancer). This means your outbound IP changes unpredictably — a nightmare when partners whitelist specific IPs.\n\nNAT Gateway assigns a STATIC public IP to all outbound traffic from a subnet. Every VM in that subnet shares the same outbound IP. Consistent, predictable, easy for partner whitelisting.\n\n**Azure Bastion — Secure Admin Access:**\nInstead of exposing VMs with public IPs for RDP/SSH (huge security risk), Azure Bastion provides secure RDP/SSH through the Azure portal over TLS.\n\nBasic SKU: Single session. Standard SKU: Multi-session, file transfer, native client support, shareable links. Deploy in the hub VNet — accessible across all peered spokes.\n\n**Azure DNS:**\nPublic Zones: Host your domain's DNS records on Azure's global nameserver network. Private Zones: Internal name resolution within VNets. Auto-registration: VMs automatically get DNS records when created — no manual configuration. Alias records: Point to Azure resources (Load Balancer, Front Door) instead of static IPs.\n\n**Azure Firewall in Detail:**\nStandard: FQDN filtering (allow *.microsoft.com, block *.facebook.com), application rules, network rules, DNAT rules, threat intelligence (auto-block known malicious IPs).\nPremium: Everything in Standard PLUS TLS inspection (decrypt HTTPS to inspect content), IDPS (intrusion detection and prevention), URL filtering, and web categories.\n\nFirewall Manager: Centralize policies across multiple firewalls and VWAN hubs. Create a parent policy with baseline rules, child policies per region with local rules. Single pane of glass management.\n\n**Interview Tip:**\n\"UDRs force traffic through Azure Firewall — the 0.0.0.0/0 route is the foundation of hub-spoke security. Route Server enables dynamic BGP with third-party NVAs. NAT Gateway for consistent outbound IPs. Firewall Manager for centralized multi-firewall policy management.\"\n",
+quiz:[{q:"Highest route priority:",o:["System routes","BGP routes","User-Defined Routes","Default routes"],a:2},{q:"Route Server enables:",o:["DNS resolution","BGP between NVAs and Azure VNet","Load balancing","VPN acceleration"],a:1},{q:"NAT Gateway provides:",o:["Inbound access","Static outbound IP for subnet","DNS resolution","Firewall rules"],a:1}]},
+
+{mod:"Core Networking",id:"az700-5",title:"Load Balancing — Complete Decision Guide",
+content:"Azure offers four load balancers, each designed for specific scenarios. Choosing the right one — and knowing when to layer them — is a core networking skill.\n\n**Azure Load Balancer (Layer 4 — TCP/UDP):**\nDistributes TCP and UDP traffic across backend VMs. Think of it as a traffic cop at an intersection — it doesn't look at what's inside the cars (HTTP headers), just directs them to the least busy road.\n\nStandard SKU features: Zone-redundant (survives AZ failure), requires NSG on backend, health probes (TCP/HTTP/HTTPS — checks if VMs are alive), outbound rules for SNAT control.\n\n**HA Ports Mode:** Forwards ALL ports and protocols simultaneously to NVA backends. Essential when you put a Palo Alto or Cisco firewall behind an internal load balancer — you can't list every port, so HA Ports forwards everything.\n\n**Application Gateway (Layer 7 — HTTP/HTTPS):**\nThis is a smart web traffic manager. Unlike Load Balancer, it understands HTTP — it reads URLs, headers, and cookies to make routing decisions.\n\nKey features: URL-based routing (/api requests → API backend pool, /images → CDN backend, /app → app servers). Multi-site hosting (app1.company.com → Pool A, app2.company.com → Pool B). SSL termination (decrypt HTTPS at the gateway, forward plain HTTP to backends — reduces backend CPU). End-to-end SSL (re-encrypt to backends for compliance). Cookie-based session affinity. Connection draining (gracefully remove servers). Autoscale: 0 to 125 instances. URL rewrite and redirect rules.\n\n**WAF v2 (Web Application Firewall):** Built into Application Gateway. OWASP Core Rule Set 3.2 protects against: SQL injection, cross-site scripting (XSS), file inclusion, protocol attacks. Custom rules for geo-filtering, rate limiting, IP blocking. Bot protection categorizes traffic as good bots, bad bots, and unknown.\n\n**Azure Front Door (Global Layer 7):**\nThink of Application Gateway as regional, Front Door as global. Front Door has Points of Presence (POPs) worldwide. When a user in Tokyo makes a request, it hits the nearest POP — not your backend in East US.\n\nAnycast routing: Users automatically connect to nearest POP. Split traffic: 90% to production, 10% to canary release for A/B testing. CDN caching: Static content served from edge POPs. WAF: Same protection as App GW but at global edge. Instant failover: Backend in East US goes down? Front Door routes to West Europe in seconds. Private Link origins: Connect to backends without public exposure.\n\n**Traffic Manager (DNS-based Global Routing):**\nUnlike Front Door (which proxies traffic), Traffic Manager only provides DNS resolution. It returns the IP of the healthiest or closest endpoint — actual traffic goes directly from user to backend.\n\nRouting methods: Priority (active/passive failover), Weighted (split traffic by percentage), Performance (route to nearest based on latency), Geographic (users in EU always go to EU backend), MultiValue (return multiple healthy IPs), Subnet (route specific IP ranges to specific endpoints).\n\n**The Layered Architecture Pattern:**\nGlobal → Front Door (CDN + WAF + global failover)\nRegional → Application Gateway (URL routing + regional WAF)\nBackend → Internal Load Balancer (distribute to VMs/NVAs)\n\n**Decision Tree:**\nNeed global HTTP load balancing with CDN? → Azure Front Door\nNeed regional HTTP with URL routing and WAF? → Application Gateway\nNeed regional TCP/UDP distribution? → Azure Load Balancer\nNeed DNS-based global routing for non-HTTP? → Traffic Manager\n\n**Interview Tip:**\n\"I layer load balancers: Front Door globally for CDN, WAF, and instant failover. Application Gateway per region for URL-based routing and regional WAF. Internal Load Balancer with HA Ports for NVA backends. Traffic Manager for DNS-based failover of non-HTTP services.\"\n",
+quiz:[{q:"App Gateway WAF v2 max instances:",o:["10","50","125","Unlimited"],a:2},{q:"HA Ports load balances:",o:["Port 80 only","Port 443 only","ALL ports simultaneously","No ports"],a:2},{q:"Front Door uses:",o:["Layer 4","DNS only","Global anycast Layer 7","BGP routing"],a:2},{q:"Traffic Manager Performance method routes to:",o:["Random endpoint","Cheapest endpoint","Nearest/fastest endpoint","Newest endpoint"],a:2}]},
+
+{mod:"Security & Monitoring",id:"az700-6",title:"Private Access, DDoS & WAF",
+content:"Network security in Azure protects your resources from unauthorized access, data exfiltration, and attacks. Understanding Private Endpoints, DDoS, and WAF is essential.\n\n**Service Endpoints vs Private Endpoints — The Critical Difference:**\n\n**Service Endpoints (Free):**\nWhen you enable a Service Endpoint on a subnet, traffic to Azure PaaS services (Storage, SQL, Key Vault) routes over Azure's backbone network instead of the public internet. Faster and more secure.\n\nBUT: The PaaS service KEEPS its public IP address. You can't access it from on-premises via VPN. It only works within the VNet where it's configured. And theoretically, someone who knows the public endpoint can still try to access it from the internet.\n\n**Private Endpoints (Costs Money — But Much More Secure):**\nA Private Endpoint creates a PRIVATE IP address for the PaaS service INSIDE your VNet. Your Azure SQL Database gets a private IP like 10.0.5.4 instead of a public address. Traffic stays entirely on Microsoft's network.\n\nKey advantages over Service Endpoints: Accessible from on-premises via VPN/ExpressRoute (the private IP is routable). Works across peered VNets. Completely eliminates public internet exposure — no public endpoint to attack. Prevents data exfiltration (data can only flow to your specific private endpoint).\n\nRequires a Private DNS Zone to resolve the service name to the private IP. Example: mydb.database.windows.net resolves to 10.0.5.4 instead of a public IP.\n\n**Bottom line: Always prefer Private Endpoints for production workloads.** The cost is minimal compared to the security benefit.\n\n**DDoS Protection:**\n**Basic (Free):** Always-on Layer 3/4 protection applied to every Azure public IP automatically. Protects against common network-layer volumetric attacks.\n\n**Standard:** Adds machine learning-based adaptive tuning — learns your normal traffic patterns and detects anomalies. Real-time attack metrics in Azure Monitor. Cost protection guarantee — if a DDoS attack causes your services to scale up, Azure refunds the scaling costs. Access to DDoS Rapid Response (DRR) team during active attacks. Diagnostic logging for forensic analysis.\n\n**WAF (Web Application Firewall):**\nDeploys on Application Gateway or Azure Front Door. Protects against the OWASP Top 10 web vulnerabilities using Core Rule Set 3.2: SQL injection, cross-site scripting (XSS), remote file inclusion, command injection, HTTP protocol violations, HTTP request smuggling, and more.\n\nCustom rules: Geo-filtering (block all traffic from specific countries), rate limiting (max 100 requests per minute per IP), IP restriction (allow only your office IPs), request size limits.\n\nBot protection: Categorizes traffic into Good Bots (search engines like Googlebot), Bad Bots (scrapers, credential stuffers), and Unknown. Block or redirect each category.\n\n**NSG Best Practices:**\nApply NSGs at the SUBNET level (not individual NICs) for consistent security. Use Application Security Groups (ASGs) for logical grouping — tag VMs as \"WebServer\" or \"DBServer\" and reference those tags in rules instead of IP addresses. Enable NSG Flow Logs for complete traffic visibility.\n\n**Interview Tip:**\n\"Private Endpoints for all PaaS services in production — eliminate public exposure and enable on-prem access via VPN. DDoS Standard for any internet-facing workload with cost protection guarantee. WAF on Front Door for global protection, App Gateway WAF for regional. NSG Flow Logs with Traffic Analytics for complete network visibility.\"\n",
+quiz:[{q:"Private Endpoint provides:",o:["Public IP","Private IP inside your VNet","DNS only","Speed boost"],a:1},{q:"Service Endpoints cost:",o:["$5/month","$50/month","Free","Per-GB pricing"],a:2},{q:"DDoS Standard includes:",o:["Basic filtering only","ML adaptive protection + cost guarantee","No protection","Manual rules only"],a:1}]},
+
+{mod:"Security & Monitoring",id:"az700-7",title:"Network Watcher & Traffic Analytics",
+content:"Network Watcher is your complete diagnostic and monitoring toolkit for Azure networking. When something breaks — and in networking, things WILL break — these are the tools that help you find and fix the problem.\n\n**Diagnostic Tools — Finding the Problem:**\n\n**IP Flow Verify (Your #1 First Step):**\n\"Is my traffic being allowed or denied by an NSG?\" You specify: source VM, source IP, destination IP, destination port, protocol (TCP/UDP). IP Flow Verify tells you: ALLOWED or DENIED, and which exact NSG rule matched. This is ALWAYS your first troubleshooting step when a VM can't communicate.\n\nReal example: A developer says \"I can't reach the database server.\" Run IP Flow Verify: Source=DevVM, Dest=DBVM, Port=1433, TCP. Result: \"Denied by NSG rule DenyAllInbound at priority 65500.\" Fix: Add an allow rule for port 1433 from the app subnet.\n\n**Next Hop:**\n\"Where does this packet actually go?\" Shows the route table decision for a specific packet. Verifies your UDRs are working correctly. If you set up a UDR to force traffic through Azure Firewall but Next Hop shows \"Internet\" — your route table isn't applied to the subnet.\n\n**Connection Troubleshoot:**\nEnd-to-end connectivity test between any two Azure resources, or from Azure to an external endpoint. Tests TCP connectivity, shows latency, identifies where in the path the connection fails.\n\n**Packet Capture:**\nRecords actual network traffic on a VM's NIC. Download the capture file and open it in Wireshark for deep packet analysis. Use when: you need to see exactly what's happening at the packet level — malformed requests, unexpected traffic, protocol-level issues.\n\n**VPN Troubleshoot:**\nDiagnoses VPN Gateway issues — checks IKE negotiation logs, tunnel status, configuration errors, gateway health. Use when: S2S or P2S VPN connections are failing or intermittent.\n\n**Monitoring Tools — Ongoing Visibility:**\n\n**Connection Monitor:**\nContinuous multi-source-to-destination monitoring. Set up monitoring from your Azure VMs to your on-premises servers, SaaS endpoints, and internet URLs. Alerts when latency exceeds thresholds or connectivity drops. Provides reachability trends over time.\n\n**NSG Flow Logs v2:**\nLogs ALL traffic evaluated by NSGs — both allowed AND denied flows. Version 2 adds throughput data (bytes and packets per flow). Send to Storage Account for archival, Log Analytics for KQL queries.\n\n**Traffic Analytics (Built on Flow Logs):**\nThe visualization layer on top of NSG Flow Logs. Provides: Geo maps showing where traffic originates worldwide. Top talkers — which VMs generate the most traffic. Security insights — which ports are unexpectedly open, which flows are being denied most. Capacity planning — bandwidth trends over time. Malicious flow detection — traffic to/from known bad IPs.\n\n**Azure Firewall Logs:**\nApplication rule logs (which FQDNs were allowed/denied), Network rule logs (which IP/port combinations), DNS proxy logs, IDPS logs (Premium — intrusion detection alerts). All flow to Log Analytics for KQL queries and alerting.\n\n**The Troubleshooting Playbook:**\n1. Can't reach a VM? → IP Flow Verify (check NSG rules)\n2. Traffic going wrong direction? → Next Hop (check routing/UDRs)\n3. Intermittent connectivity? → Connection Monitor (ongoing tracking)\n4. Need deep packet analysis? → Packet Capture + Wireshark\n5. VPN down? → VPN Troubleshoot\n6. Who's talking to whom? → NSG Flow Logs + Traffic Analytics\n7. Firewall blocking something? → Azure Firewall logs in Log Analytics\n\n**Interview Tip:**\n\"IP Flow Verify is always my first step — it tells me instantly if an NSG is blocking traffic. NSG Flow Logs v2 with Traffic Analytics provides complete network visibility including geo maps, top talkers, and security insights. Connection Monitor for ongoing multi-destination monitoring. Firewall Manager centralizes policy across multiple firewalls and VWAN hubs.\"\n",
+quiz:[{q:"IP Flow Verify checks:",o:["DNS resolution","Which NSG rule allows/denies traffic","Network speed","Latency"],a:1},{q:"Traffic Analytics shows:",o:["Only denied traffic","Geo + top talkers + security insights","Only allowed traffic","Only Azure traffic"],a:1},{q:"Packet Capture is for:",o:["DNS queries","Deep packet analysis (Wireshark)","Load balancing","Firewall management"],a:1},{q:"NSG Flow Logs v2 adds:",o:["Only deny logs","Throughput data (bytes/packets)","Only allow logs","DNS queries"],a:1}]}
+];
+
+
+function AZ700App() {
+  const [view, setView] = useState("home");
+  const [topicIdx, setTopicIdx] = useState(0);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [ans, setAns] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [prog, setProg] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("az700-prog")) || {}; } catch { return {}; }
+  });
+  const [intIdx, setIntIdx] = useState(0);
+  const [intShow, setIntShow] = useState(false);
+  const topRef = useRef(null);
+
+  useEffect(() => { try { localStorage.setItem("az700-prog", JSON.stringify(prog)); } catch {} }, [prog]);
+  useEffect(() => { topRef.current?.scrollIntoView({ behavior: "smooth" }); }, [topicIdx, view]);
+
+  const topic = L[topicIdx];
+  const modules = [...new Set(L.map(l => l.mod))];
+  const getModTopics = (m) => L.filter(l => l.mod === m);
+  const pct = Math.round(Object.keys(prog).filter(k => prog[k]).length / L.length * 100);
+  const c = COURSE.color;
+
+  const renderText = (text) => {
+    if (!text) return null;
+    const lines = text.split(/\\n|\n/);
+    return lines.map((line, i) => {
+      if (!line.trim()) return <div key={i} style={{ height: 12 }} />;
+      let html = line
+        .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:' + c + '">$1</strong>');
+      if (line.trim().startsWith("- ")) {
+        html = '<span style="color:' + c + ';margin-right:8px">\u25cf</span>' + line.trim().slice(2);
+      }
+      return <div key={i} style={{ marginBottom: 5, lineHeight: 1.85, fontSize: 15, color: "#dce1eb" }} dangerouslySetInnerHTML={{ __html: html }} />;
+    });
+  };
+
+  const ProgressBar = ({ p, h = 7 }) => (
+    <div style={{ width: "100%", height: h, borderRadius: h, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+      <div style={{ width: p + "%", height: "100%", borderRadius: h, background: "linear-gradient(90deg," + c + "," + c + "cc)", transition: "width 0.6s" }} />
+    </div>
+  );
+
+  const cardStyle = { background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 20, marginBottom: 12, transition: "all 0.2s" };
+  const btnStyle = { padding: "11px 22px", borderRadius: 11, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 14, transition: "all 0.15s" };
+
+  // ━━━ HOME VIEW ━━━
+  if (view === "home") {
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px 16px 60px" }}>
+          <div style={{ textAlign: "center", padding: "30px 0 20px" }}>
+            <div style={{ fontSize: 56, marginBottom: 6 }}>{COURSE.icon}</div>
+            <h1 style={{ fontSize: 28, fontWeight: 900, color: c, margin: "0 0 4px" }}>{COURSE.title}</h1>
+            <p style={{ color: "#8892a6", fontSize: 13, margin: "0 0 4px" }}>{COURSE.desc}</p>
+            <p style={{ color: "#5a6478", fontSize: 12, margin: "0 0 16px" }}>by <span style={{ color: "#FF6B35", fontWeight: 700 }}>Ram Mohan Pathak</span></p>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", maxWidth: 400, margin: "0 auto" }}>
+              <ProgressBar p={pct} />
+              <span style={{ fontSize: 15, fontWeight: 700, color: c }}>{pct}%</span>
+              <span style={{ fontSize: 11, color: "#5a6478" }}>{Object.keys(prog).filter(k => prog[k]).length}/{L.length}</span>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 8, margin: "0 0 20px", flexWrap: "wrap" }}>
+            {[
+              { v: L.length, l: "Lessons", ic: "\ud83d\udcd6" },
+              { v: L.reduce((a, t) => a + (t.quiz ? t.quiz.length : 0), 0), l: "Quiz Q's", ic: "\ud83d\udcdd" },
+              { v: COURSE.interview ? COURSE.interview.length : 0, l: "Interview", ic: "\ud83c\udf99\ufe0f" },
+              { v: COURSE.roles ? COURSE.roles.length : 0, l: "Roles", ic: "\ud83d\udcbc" }
+            ].map((s, i) => (
+              <div key={i} style={{ flex: "1 1 100px", ...cardStyle, textAlign: "center", padding: "12px 8px", cursor: "default" }}>
+                <div style={{ fontSize: 13 }}>{s.ic}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: c }}>{s.v}</div>
+                <div style={{ fontSize: 10, color: "#8892a6" }}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+
+          {modules.map((mod, mi) => {
+            const topics = getModTopics(mod);
+            return (
+              <div key={mi} style={{ marginBottom: 20 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: 7, background: c + "20", color: c, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13 }}>{mi + 1}</div>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: c, flex: 1 }}>{mod}</h3>
+                  <span style={{ fontSize: 11, color: "#5a6478" }}>{topics.filter(t => prog[t.id]).length}/{topics.length}</span>
+                </div>
+                {topics.map((t, ti) => {
+                  const idx = L.indexOf(t);
+                  const done = prog[t.id];
+                  return (
+                    <div key={t.id} onClick={() => { setTopicIdx(idx); setShowQuiz(false); setAns({}); setSubmitted(false); setView("topic"); }}
+                      style={{ ...cardStyle, display: "flex", alignItems: "center", gap: 10, padding: 14, cursor: "pointer", borderColor: done ? "#34d39930" : "rgba(255,255,255,0.04)" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.025)"; }}>
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: done ? "#34d39912" : "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0, color: done ? "#34d399" : "#5a6478" }}>
+                        {done ? "\u2705" : (mi + 1) + "." + (ti + 1)}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: "#e8ecf4" }}>{t.title}</div>
+                        {t.quiz && <div style={{ fontSize: 10, color: "#5a6478", marginTop: 2 }}>\ud83d\udcdd {t.quiz.length} quiz questions</div>}
+                      </div>
+                      <span style={{ fontSize: 16, color: "#5a6478" }}>\u2192</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+            {COURSE.interview && COURSE.interview.length > 0 && (
+              <div style={{ ...cardStyle, cursor: "pointer" }} onClick={() => setView("interview")}>
+                <h3 style={{ margin: "0 0 4px", fontSize: 15, color: "#a78bfa" }}>\ud83c\udf99\ufe0f Interview Prep</h3>
+                <p style={{ fontSize: 11, color: "#8892a6", margin: 0 }}>{COURSE.interview.length} Q&As with model answers</p>
+              </div>
+            )}
+            {COURSE.roles && COURSE.roles.length > 0 && (
+              <div style={{ ...cardStyle, cursor: "pointer" }} onClick={() => setView("career")}>
+                <h3 style={{ margin: "0 0 4px", fontSize: 15, color: "#34d399" }}>\ud83d\udcbc Career & Resume</h3>
+                <p style={{ fontSize: 11, color: "#8892a6", margin: 0 }}>{COURSE.roles.length} roles + resume bullets</p>
+              </div>
+            )}
+          </div>
+
+          <div style={{ textAlign: "center", padding: "20px 0", color: "#3d4556", fontSize: 10 }}>Smart Tutor Ram by Ram Mohan Pathak</div>
+        </div>
+        <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:2px}button:hover{filter:brightness(1.08)}button:active{transform:scale(.98)}`}</style>
+      </div>
+    );
+  }
+
+  // ━━━ TOPIC VIEW ━━━
+  if (view === "topic" && topic) {
+    const score = topic.quiz ? topic.quiz.filter((q, i) => ans[i] === q.a).length : 0;
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <div ref={topRef} />
+        <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(10,14,26,0.92)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 48, backdropFilter: "blur(16px)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: "#e8ecf4", cursor: "pointer", fontSize: 18 }}>\u2190</button>
+            <span style={{ fontWeight: 800, fontSize: 13, color: c }}>{COURSE.title.split(":")[0]}</span>
+          </div>
+          <span style={{ fontSize: 11, color: "#5a6478" }}>{topicIdx + 1}/{L.length}</span>
+        </nav>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "16px 14px 60px" }}>
+          <div style={{ display: "inline-block", padding: "4px 12px", borderRadius: 16, fontSize: 11, fontWeight: 600, background: c + "18", color: c, marginBottom: 6 }}>{topic.mod}</div>
+          <h2 style={{ margin: "6px 0 14px", fontSize: 22, fontWeight: 800, color: "#e8ecf4" }}>{topic.title}</h2>
+
+          {topic.quiz && topic.quiz.length > 0 && (
+            <div style={{ display: "flex", gap: 3, marginBottom: 16, background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: 3 }}>
+              <button onClick={() => setShowQuiz(false)} style={{ ...btnStyle, flex: 1, background: !showQuiz ? c : "transparent", color: !showQuiz ? "#fff" : "#8892a6" }}>\ud83d\udcd6 Lesson</button>
+              <button onClick={() => { setShowQuiz(true); setAns({}); setSubmitted(false); }} style={{ ...btnStyle, flex: 1, background: showQuiz ? c : "transparent", color: showQuiz ? "#fff" : "#8892a6" }}>\ud83d\udcdd Quiz ({topic.quiz.length})</button>
+            </div>
+          )}
+
+          {!showQuiz ? (
+            <div style={{ ...cardStyle, cursor: "default", padding: 28, lineHeight: 1.85 }}>
+              {renderText(topic.content)}
+              <div style={{ marginTop: 24, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {!prog[topic.id] ? (
+                  <button onClick={() => setProg(p => ({ ...p, [topic.id]: true }))} style={{ ...btnStyle, background: "#34d399", color: "#000" }}>\u2705 Mark Complete</button>
+                ) : (
+                  <span style={{ display: "inline-block", padding: "8px 16px", borderRadius: 16, fontSize: 12, fontWeight: 600, background: "#34d39918", color: "#34d399" }}>\u2705 Completed</span>
+                )}
+                {topicIdx < L.length - 1 && (
+                  <button onClick={() => { setTopicIdx(topicIdx + 1); setShowQuiz(false); setAns({}); setSubmitted(false); }} style={{ ...btnStyle, background: c + "20", color: c }}>Next \u2192</button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div>
+              {topic.quiz.map((q, qi) => {
+                const sel = ans[qi];
+                const isRight = submitted && sel === q.a;
+                const isWrong = submitted && sel !== undefined && sel !== q.a;
+                return (
+                  <div key={qi} style={{ ...cardStyle, cursor: "default", borderColor: isRight ? "#34d39930" : isWrong ? "#f8717130" : "rgba(255,255,255,0.04)" }}>
+                    <p style={{ margin: "0 0 12px", fontWeight: 700, fontSize: 14, color: "#e8ecf4" }}>Q{qi + 1}: {q.q}</p>
+                    {q.o.map((opt, oi) => {
+                      const isSel = sel === oi;
+                      const green = submitted && oi === q.a;
+                      const red = submitted && isSel && oi !== q.a;
+                      return (
+                        <button key={oi} onClick={() => !submitted && setAns(p => ({ ...p, [qi]: oi }))}
+                          style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 16px", marginBottom: 6, borderRadius: 10,
+                            border: "1px solid " + (green ? "#34d39930" : red ? "#f8717130" : isSel ? c + "30" : "transparent"),
+                            background: green ? "#34d39912" : red ? "#f8717112" : isSel ? c + "12" : "rgba(255,255,255,0.02)",
+                            color: green ? "#34d399" : red ? "#f87171" : isSel ? c : "#e8ecf4",
+                            cursor: submitted ? "default" : "pointer", fontWeight: 500, fontSize: 13 }}>
+                          {String.fromCharCode(65 + oi)}. {opt}{green ? " \u2705" : ""}{red ? " \u274c" : ""}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+              {!submitted ? (
+                <button onClick={() => setSubmitted(true)} disabled={Object.keys(ans).length !== topic.quiz.length}
+                  style={{ ...btnStyle, width: "100%", padding: 13, fontSize: 15, background: c, color: "#fff", opacity: Object.keys(ans).length === topic.quiz.length ? 1 : 0.4 }}>Submit Answers</button>
+              ) : (
+                <div style={{ ...cardStyle, cursor: "default", textAlign: "center" }}>
+                  <div style={{ fontSize: 36 }}>{score === topic.quiz.length ? "\ud83c\udf89" : "\ud83d\udcda"}</div>
+                  <h3 style={{ margin: "6px 0", color: "#e8ecf4" }}>Score: {score}/{topic.quiz.length}</h3>
+                  <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 10 }}>
+                    <button onClick={() => { setAns({}); setSubmitted(false); }} style={{ ...btnStyle, background: c + "20", color: c }}>Retry</button>
+                    {topicIdx < L.length - 1 && <button onClick={() => { setTopicIdx(topicIdx + 1); setShowQuiz(false); setAns({}); setSubmitted(false); }} style={{ ...btnStyle, background: c, color: "#fff" }}>Next \u2192</button>}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:2px}button:hover{filter:brightness(1.08)}button:active{transform:scale(.98)}`}</style>
+      </div>
+    );
+  }
+
+  // ━━━ INTERVIEW VIEW ━━━
+  if (view === "interview" && COURSE.interview) {
+    const q = COURSE.interview[intIdx];
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(10,14,26,0.92)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 48, backdropFilter: "blur(16px)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: "#e8ecf4", cursor: "pointer", fontSize: 18 }}>\u2190</button>
+            <span style={{ fontWeight: 800, fontSize: 13, color: "#a78bfa" }}>\ud83c\udf99\ufe0f Interview Prep</span>
+          </div>
+          <span style={{ fontSize: 11, color: "#5a6478" }}>{intIdx + 1}/{COURSE.interview.length}</span>
+        </nav>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "16px 14px 60px" }}>
+          <ProgressBar p={(intIdx + 1) / COURSE.interview.length * 100} h={4} />
+          <div style={{ ...cardStyle, marginTop: 14, cursor: "default" }}>
+            <p style={{ fontSize: 10, color: "#5a6478", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 6px" }}>Interviewer asks:</p>
+            <h3 style={{ margin: 0, fontSize: 18, lineHeight: 1.5, color: "#e8ecf4" }}>"{q.q}"</h3>
+          </div>
+          {!intShow ? (
+            <button onClick={() => setIntShow(true)} style={{ ...btnStyle, width: "100%", padding: 13, fontSize: 15, background: "linear-gradient(135deg, #7c3aed, #ec4899)", color: "#fff", marginTop: 8 }}>\ud83d\udca1 Reveal Model Answer</button>
+          ) : (
+            <div style={{ ...cardStyle, marginTop: 8, cursor: "default", borderColor: "#7c3aed25" }}>
+              <p style={{ fontSize: 10, color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 8px" }}>Model Answer:</p>
+              {renderText(q.a)}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
+            <button onClick={() => { setIntIdx(i => i - 1); setIntShow(false); }} disabled={intIdx === 0} style={{ ...btnStyle, flex: 1, background: "rgba(255,255,255,0.04)", color: "#e8ecf4", opacity: intIdx === 0 ? 0.3 : 1 }}>\u2190 Prev</button>
+            <button onClick={() => { setIntIdx(i => i + 1); setIntShow(false); }} disabled={intIdx === COURSE.interview.length - 1} style={{ ...btnStyle, flex: 1, background: c, color: "#fff", opacity: intIdx === COURSE.interview.length - 1 ? 0.3 : 1 }}>Next \u2192</button>
+          </div>
+        </div>
+        <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:2px}button:hover{filter:brightness(1.08)}button:active{transform:scale(.98)}`}</style>
+      </div>
+    );
+  }
+
+  // ━━━ CAREER VIEW ━━━
+  if (view === "career") {
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(10,14,26,0.92)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "0 16px", display: "flex", alignItems: "center", height: 48, gap: 8, backdropFilter: "blur(16px)" }}>
+          <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: "#e8ecf4", cursor: "pointer", fontSize: 18 }}>\u2190</button>
+          <span style={{ fontWeight: 800, fontSize: 13, color: "#34d399" }}>\ud83d\udcbc Career Guide</span>
+        </nav>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "16px 14px 60px" }}>
+          {COURSE.roles && (
+            <div style={{ ...cardStyle, cursor: "default" }}>
+              <h3 style={{ margin: "0 0 12px", fontSize: 17, color: "#34d399" }}>\ud83d\udcbc Roles After This Certification</h3>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {COURSE.roles.map((r, i) => <span key={i} style={{ display: "inline-block", padding: "6px 14px", borderRadius: 18, fontSize: 12, fontWeight: 600, background: "#34d39912", color: "#34d399" }}>{r}</span>)}
+              </div>
+            </div>
+          )}
+          {COURSE.resume && (
+            <div style={{ ...cardStyle, cursor: "default" }}>
+              <h3 style={{ margin: "0 0 12px", fontSize: 17, color: c }}>\ud83d\udcc4 Resume Bullet Points</h3>
+              {COURSE.resume.map((b, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                  <span style={{ color: c, fontSize: 14, marginTop: 3, flexShrink: 0 }}>\u25cf</span>
+                  <p style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: "#e8ecf4" }}>{b}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:2px}button:hover{filter:brightness(1.08)}button:active{transform:scale(.98)}`}</style>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(AZ700App));
+</script>
+</body>
+</html>

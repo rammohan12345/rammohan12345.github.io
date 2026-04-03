@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Tutor Ram — AI Certification Coach</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans','Segoe UI',sans-serif;background:#0a0e1a;color:#e8ecf4;min-height:100vh}
+.wrap{max-width:900px;margin:0 auto;padding:20px 16px 60px}
+.header{text-align:center;padding:40px 0 24px}
+.header h1{font-size:38px;font-weight:900;background:linear-gradient(135deg,#FF6B35,#0078D4,#50E6FF,#E3008C);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:8px 0 0}
+.stats{display:flex;gap:10px;margin:0 0 24px;flex-wrap:wrap}
+.stat{flex:1 1 120px;background:rgba(255,255,255,0.03);border-radius:14px;padding:16px 10px;text-align:center;border:1px solid rgba(255,255,255,0.04)}
+.stat-n{font-size:28px;font-weight:800}
+.stat-l{font-size:11px;color:#8892a6;margin-top:3px}
+.path{background:linear-gradient(135deg,rgba(255,107,53,0.05),rgba(0,120,212,0.02));border:1px solid rgba(255,107,53,0.1);border-radius:16px;padding:20px;margin-bottom:20px}
+.path h3{margin:0 0 14px;font-size:17px;color:#FF6B35;font-weight:700}
+.path-item{display:flex;align-items:center;gap:10px;margin-bottom:10px;cursor:pointer;padding:6px;border-radius:10px;transition:background .2s}
+.path-item:hover{background:rgba(255,255,255,0.03)}
+.path-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.cert-card{background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:22px;transition:all .2s;cursor:pointer;text-decoration:none;display:block}
+.cert-card:hover{background:rgba(255,255,255,0.05);transform:translateY(-2px)}
+.cert-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.cert-icon{font-size:32px}
+.cert-name{font-size:18px;font-weight:800;color:#e8ecf4;margin:0}
+.cert-sub{font-size:11px;color:#8892a6;margin:0}
+.cert-desc{font-size:12px;color:#8892a6;margin:0 0 10px;line-height:1.4}
+.chip{display:inline-block;padding:4px 12px;border-radius:18px;font-size:10px;font-weight:600}
+.footer{text-align:center;padding:30px 0 10px;border-top:1px solid rgba(255,255,255,0.03);margin-top:24px}
+.note{background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.15);border-radius:12px;padding:16px 20px;margin:20px 0;font-size:13px;color:#34d399;line-height:1.6}
+.note b{color:#5eead4}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div style="font-size:64px;margin-bottom:8px">🧠</div>
+    <h1>Smart Tutor Ram</h1>
+    <p style="color:#8892a6;margin:10px 0 0;font-size:16px">AI-Powered Microsoft & Azure Certification Coach</p>
+    <p style="color:#5a6478;margin:6px 0 0;font-size:13px">Built by <span style="color:#FF6B35;font-weight:700">Ram Mohan Pathak</span></p>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-n" style="color:#FF6B35">7</div><div class="stat-l">Certifications</div></div>
+    <div class="stat"><div class="stat-n" style="color:#34d399">61</div><div class="stat-l">In-Depth Topics</div></div>
+    <div class="stat"><div class="stat-n" style="color:#00A4EF">258+</div><div class="stat-l">Quiz Questions</div></div>
+    <div class="stat"><div class="stat-n" style="color:#a78bfa">28</div><div class="stat-l">Interview Q&As</div></div>
+  </div>
+
+  <div class="note">
+    <b>How to use:</b> Click any certification below to open its complete course. Each course opens in a new tab with all lessons, quizzes, interview prep, and career guide. All files must be in the <b>same folder</b> as this page.
+  </div>
+
+  <div class="path">
+    <h3>📍 Recommended Learning Path</h3>
+    <a class="path-item" href="ms900.html">
+      <div class="path-num" style="background:#D83B0120;color:#D83B01">1</div>
+      <span style="font-weight:700;color:#e8ecf4;font-size:14px">MS-900</span>
+      <span class="chip" style="background:#D83B0115;color:#D83B01">3-4 wks</span>
+      <span style="font-size:12px;color:#8892a6;flex:1">Microsoft 365 Fundamentals</span>
+    </a>
+    <a class="path-item" href="az900.html">
+      <div class="path-num" style="background:#0078D420;color:#0078D4">2</div>
+      <span style="font-weight:700;color:#e8ecf4;font-size:14px">AZ-900</span>
+      <span class="chip" style="background:#0078D415;color:#0078D4">4-6 wks</span>
+      <span style="font-size:12px;color:#8892a6;flex:1">Azure Fundamentals</span>
+    </a>
+    <a class="path-item" href="az800.html">
+      <div class="path-num" style="background:#FF8C0020;color:#FF8C00">3</div>
+      <span style="font-weight:700;color:#e8ecf4;font-size:14px">AZ-800</span>
+      <span class="chip" style="background:#FF8C0015;color:#FF8C00">8-10 wks</span>
+      <span style="font-size:12px;color:#8892a6;flex:1">Windows Server Hybrid Core</span>
+    </a>
+    <a class="path-item" href="az801.html">
+      <div class="path-num" style="background:#E3008C20;color:#E3008C">4</div>
+      <span style="font-weight:700;color:#e8ecf4;font-size:14px">AZ-801</span>
+      <span class="chip" style="background:#E3008C15;color:#E3008C">8-10 wks</span>
+      <span style="font-size:12px;color:#8892a6;flex:1">Windows Server Hybrid Advanced</span>
+    </a>
+    <a class="path-item" href="md102.html">
+      <div class="path-num" style="background:#7FBA0020;color:#7FBA00">5</div>
+      <span style="font-weight:700;color:#e8ecf4;font-size:14px">MD-102</span>
+      <span class="chip" style="background:#7FBA0015;color:#7FBA00">6-8 wks</span>
+      <span style="font-size:12px;color:#8892a6;flex:1">Endpoint Administrator</span>
+    </a>
+    <a class="path-item" href="az104.html">
+      <div class="path-num" style="background:#00A4EF20;color:#00A4EF">6</div>
+      <span style="font-weight:700;color:#e8ecf4;font-size:14px">AZ-104</span>
+      <span class="chip" style="background:#00A4EF15;color:#00A4EF">8-10 wks</span>
+      <span style="font-size:12px;color:#8892a6;flex:1">Azure Administrator</span>
+    </a>
+    <a class="path-item" href="az700.html">
+      <div class="path-num" style="background:#50E6FF20;color:#50E6FF">7</div>
+      <span style="font-weight:700;color:#e8ecf4;font-size:14px">AZ-700</span>
+      <span class="chip" style="background:#50E6FF15;color:#50E6FF">6-8 wks</span>
+      <span style="font-size:12px;color:#8892a6;flex:1">Azure Network Engineer</span>
+    </a>
+  </div>
+
+  <div class="grid">
+    <a class="cert-card" href="ms900.html" style="border-color:#D83B0120">
+      <div class="cert-top"><span class="cert-icon">📘</span><div><h3 class="cert-name">MS-900</h3><p class="cert-sub">Microsoft 365 Fundamentals</p></div></div>
+      <p class="cert-desc">Complete M365 course — cloud concepts, Teams, SharePoint, Exchange, security, compliance, licensing. 15 topics, 73 quiz questions.</p>
+      <span class="chip" style="background:#D83B0112;color:#D83B01">Beginner • 15 Topics • 129KB</span>
+    </a>
+    <a class="cert-card" href="az900.html" style="border-color:#0078D420">
+      <div class="cert-top"><span class="cert-icon">☁️</span><div><h3 class="cert-name">AZ-900</h3><p class="cert-sub">Azure Fundamentals</p></div></div>
+      <p class="cert-desc">Azure gateway — compute, networking, storage, databases, AI, IoT, security, governance, pricing. 9 topics, 45 quiz questions.</p>
+      <span class="chip" style="background:#0078D412;color:#0078D4">Beginner • 9 Topics • 65KB</span>
+    </a>
+    <a class="cert-card" href="az104.html" style="border-color:#00A4EF20">
+      <div class="cert-top"><span class="cert-icon">⚙️</span><div><h3 class="cert-name">AZ-104</h3><p class="cert-sub">Azure Administrator</p></div></div>
+      <p class="cert-desc">Core admin — identity, RBAC, Policy, VNets, NSGs, Firewall, VMs, Scale Sets, storage, monitoring, backup. 10 topics, 40 quiz questions.</p>
+      <span class="chip" style="background:#00A4EF12;color:#00A4EF">Intermediate • 10 Topics • 55KB</span>
+    </a>
+    <a class="cert-card" href="az700.html" style="border-color:#50E6FF20">
+      <div class="cert-top"><span class="cert-icon">🌐</span><div><h3 class="cert-name">AZ-700</h3><p class="cert-sub">Azure Network Engineer</p></div></div>
+      <p class="cert-desc">Networking — VPN Gateway, ExpressRoute, Virtual WAN, routing, load balancing, Private Endpoints, monitoring. 7 topics, 24 quiz questions.</p>
+      <span class="chip" style="background:#50E6FF12;color:#50E6FF">Advanced • 7 Topics • 52KB</span>
+    </a>
+    <a class="cert-card" href="md102.html" style="border-color:#7FBA0020">
+      <div class="cert-top"><span class="cert-icon">💻</span><div><h3 class="cert-name">MD-102</h3><p class="cert-sub">Endpoint Administrator</p></div></div>
+      <p class="cert-desc">Endpoint management — Autopilot, Intune, Defender, updates, LAPS, co-management, Win32 apps, MAM/BYOD. 7 topics, 28 quiz questions.</p>
+      <span class="chip" style="background:#7FBA0012;color:#7FBA00">Intermediate • 7 Topics • 34KB</span>
+    </a>
+    <a class="cert-card" href="az800.html" style="border-color:#FF8C0020">
+      <div class="cert-top"><span class="cert-icon">🖥️</span><div><h3 class="cert-name">AZ-800</h3><p class="cert-sub">Windows Server Hybrid Core</p></div></div>
+      <p class="cert-desc">AD DS, FSMO roles, GPOs, Hyper-V, DNS, DHCP, VPN, Storage Spaces Direct, DFS, file services. 7 topics, 28 quiz questions.</p>
+      <span class="chip" style="background:#FF8C0012;color:#FF8C00">Intermediate • 7 Topics • 37KB</span>
+    </a>
+    <a class="cert-card" href="az801.html" style="border-color:#E3008C20">
+      <div class="cert-top"><span class="cert-icon">🔧</span><div><h3 class="cert-name">AZ-801</h3><p class="cert-sub">Windows Server Hybrid Advanced</p></div></div>
+      <p class="cert-desc">Security, clustering, DR, migration, monitoring — Credential Guard, Azure Arc, Site Recovery, Azure Migrate. 6 topics, 24 quiz questions.</p>
+      <span class="chip" style="background:#E3008C12;color:#E3008C">Advanced • 6 Topics • 32KB</span>
+    </a>
+  </div>
+
+  <div class="footer">
+    <p style="font-size:13px;color:#5a6478">Developed with ❤️ by <span style="color:#FF6B35;font-weight:700">Ram Mohan Pathak</span></p>
+    <p style="font-size:10px;color:#3d4556;margin-top:4px">Smart Tutor Ram v7.0 — 7 Certifications • 61 Topics • 258+ Quiz Questions • 28 Interview Q&As</p>
+    <p style="font-size:10px;color:#3d4556;margin-top:2px">100% Free • No API Calls • Works Offline Forever</p>
+  </div>
+</div>
+</body>
+</html>

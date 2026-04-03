@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Tutor Ram - AZ-800: Windows Server Hybrid Core</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js"></script>
+<style>body{margin:0;padding:0;background:#0a0e1a}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+
+const COURSE = {title:"AZ-800: Windows Server Hybrid Core Infrastructure",icon:"🖥️",color:"#FF8C00",desc:"Deploy and manage AD DS, Hyper-V, Windows Server networking, and storage services.",
+roles:["Windows Server Admin","Hybrid Infrastructure Engineer","Active Directory Engineer","Systems Administrator","Server & Storage Admin","Identity & Access Engineer","Virtualization Engineer"],
+resume:["Deployed AD DS forests, domains, sites, trusts, and managed all 5 FSMO roles in hybrid environments","Managed AD security: GPOs (LSDOU processing), delegation, fine-grained passwords, LAPS, gMSA","Configured hybrid identity with Azure AD Connect: PHS, Seamless SSO, password writeback","Administered Hyper-V: Gen 2 VMs, live migration, production checkpoints, Hyper-V Replica for DR","Implemented DNS (AD-integrated zones), DHCP failover, Always On VPN, NPS/RADIUS","Configured Storage Spaces Direct, DFS Namespace/Replication, FSRM, data deduplication"],
+interview:[
+{q:"Explain FSMO roles and when you'd seize them.",a:"Five roles: Schema Master + Domain Naming Master (1 each per forest). RID Master + PDC Emulator + Infrastructure Master (1 each per domain).\n\nPDC Emulator is most critical — handles password changes, time synchronization, and is the authoritative GPO source.\n\nSeize (not transfer) only when the current holder is permanently offline. NEVER seize Schema or Domain Naming if the DC might come back — can cause forest corruption. RID/PDC/Infrastructure can be seized more safely. After seizing, the old DC must NEVER be brought back online."},
+{q:"Recommend a hybrid identity approach.",a:"Azure AD Connect with Password Hash Sync (PHS) — my recommendation because: works even if on-prem AD is completely down, enables Leaked Credential Detection (Microsoft checks your hashes against known compromised passwords), and is the simplest to maintain.\n\nEnable Seamless SSO for domain-joined PCs. Configure Password Writeback for Azure AD SSPR (self-service password reset writes back to on-prem AD). Filter sync by OU — don't sync service accounts! Monitor with Azure AD Connect Health."},
+{q:"Design highly available storage for Hyper-V.",a:"Storage Spaces Direct (S2D) using local NVMe/SSD in each cluster node — eliminates the need for external SAN ($50K+ savings). Mirror resiliency for VM volumes (performance), Mirror-Accelerated Parity for backup volumes (capacity). Cluster Shared Volumes (CSV) for VM storage accessibility from all nodes.\n\nAzure Backup integration for off-site copies. Cloud witness in Azure for quorum (no third physical site needed)."}
+]};
+const L = [
+{mod:"Active Directory",id:"az800-1",title:"AD DS Forests, Domains & Trusts",
+content:"**What is Active Directory Domain Services (AD DS)?**
+Imagine a large office with 5000 employees. Every employee needs a badge to get in, access to specific floors, and permissions for certain rooms. AD DS is that management system for computers. It stores information about every user, computer, group, and resource in your organization. When an employee logs into their Windows PC, AD DS checks their credentials and grants access to network files, printers, and applications.
+
+**The AD DS Hierarchy:**
+**Forest:** Top-level security boundary. Nothing crosses automatically. One company = one forest usually.
+**Domain:** Logical grouping (contoso.com). Shares a single database and security policies.
+**Tree:** Hierarchy of domains (contoso.com has child.contoso.com).
+**Organizational Units (OUs):** Folders to organize users, groups, computers. Where you apply Group Policy and delegate admin.
+
+**Sites and Replication:**
+Sites = physical locations (New York, London). Site Links = WAN connections. KCC auto-builds replication topology.
+Intra-site replication: Immediate, within 15 seconds (same fast LAN).
+Inter-site replication: Scheduled, compressed (slower WAN).
+
+**FSMO Roles (Know ALL 5):**
+**Schema Master (1/forest):** Controls schema changes (adding attributes).
+**Domain Naming Master (1/forest):** Add/remove domains.
+**RID Master (1/domain):** Allocates unique SID ranges to DCs for creating objects.
+**PDC Emulator (1/domain, MOST CRITICAL):** Password changes (receives first), time synchronization, GPO authority.
+**Infrastructure Master (1/domain):** Updates cross-domain references.
+
+Seize roles ONLY when holder is permanently offline. NEVER seize Schema/Domain Naming if DC might return.
+
+**Trust Relationships:**
+Parent-Child: Automatic, two-way (child domain created).
+Forest Trust: Manual, for acquisitions (Contoso acquires Fabrikam).
+External Trust: Non-transitive to specific domain.
+Shortcut Trust: Optimizes auth in complex forests.
+
+**Functional Levels:** 2016/2019/2025. Can raise but NEVER lower.
+
+**Interview Tip:**
+"FSMO: 2 forest-wide (Schema, Domain Naming), 3 per-domain (RID, PDC Emulator, Infrastructure). PDC Emulator most critical. Sites control replication. Forest trusts for acquisitions." Let me teach it from the ground up.\n\n**The AD DS Hierarchy:** Forest is the top-level security boundary — nothing crosses it automatically. A Domain (contoso.com) shares a single database and security policies. Trees are hierarchies of domains. Organizational Units (OUs) are folders inside a domain for organizing users, groups, and computers.\n\n**Sites and Replication:** Sites represent physical locations (New York, London). Site Links define WAN connections with cost and schedule. KCC auto-generates replication topology. Intra-site replication: immediate (15 seconds). Inter-site: scheduled, compressed.\n\n**FSMO Roles (know ALL 5):** Schema Master (1/forest) controls schema changes. Domain Naming Master (1/forest) adds/removes domains. RID Master (1/domain) allocates SID ranges. PDC Emulator (1/domain) handles password changes, time sync, GPO authority — MOST CRITICAL. Infrastructure Master (1/domain) updates cross-domain references. Seize only when holder permanently offline. Never seize Schema/Domain Naming if DC might return.\n\n**Trust Relationships:** Parent-Child (automatic, two-way). Forest Trust (manual, for acquisitions). External (non-transitive). Shortcut (optimize complex forests). Selective Authentication limits what trusted users access.\n\n**Functional Levels:** 2016/2019/2025. Can raise but CANNOT lower. Higher = more features (Privileged Access Management at 2016+).\n\n**Interview Tip:** FSMO: 2 forest-wide, 3 per-domain. PDC Emulator most critical. Sites control replication. Forest trusts for acquisitions.",
+quiz:[{q:"FSMO roles per forest:",o:["5 total","3","2 (Schema + Domain Naming)","1"],a:2},{q:"PDC Emulator handles:",o:["Only DNS","Password changes, time sync, GPO authority","Only replication","Only schema"],a:1},{q:"Intra-site replication:",o:["Hourly","Within 15 seconds","Daily","Weekly"],a:1},{q:"Forest trusts are:",o:["Automatic","Manual (for acquisitions)","Always transitive","One-way only"],a:1}]},
+
+{mod:"Active Directory",id:"az800-2",title:"AD Objects, GPO & Security",
+content:"Managing AD objects and Group Policy at enterprise scale.\n\n**Group Types:** Security (assign NTFS, share, RBAC permissions). Distribution (email only). **Group Scopes:** Domain Local (permissions in THIS domain, members from ANY). Global (members from THIS domain, used in ANY). Universal (members from ANY, used in ANY, replicated to Global Catalog).\n\n**AGDLP:** Accounts → Global Groups → Domain Local Groups → Permissions. Users join Global groups (Sales-Global). Globals join Domain Local (FileShare-RW-DL). DL gets NTFS permissions.\n\n**GPO Processing (LSDOU):** Local → Site → Domain → OU. Later overrides earlier. Block Inheritance stops parent GPOs. Enforced (No Override) ALWAYS applies. Security Filtering targets specific groups. WMI Filtering applies by hardware/software. Loopback Processing (Replace/Merge) applies computer-location-based user settings.\n\n**Delegation:** Grant specific OU permissions. Helpdesk resets passwords only in their OU.\n\n**Security:** Fine-Grained Password Policies (admins 15-char, users 12-char). LAPS (unique local admin per device, stored in AD, auto-rotate). Protected Users group. gMSA (auto-managed service passwords). Kerberos Constrained Delegation.\n\n**Interview Tip:** AGDLP for nesting. LSDOU for processing. Delegation at OU level. LAPS and Protected Users for admin security.",
+quiz:[{q:"GPO processing order:",o:["OU->Domain->Site","Local->Site->Domain->OU (LSDOU)","Random","Domain only"],a:1},{q:"AGDLP stands for:",o:["Admin Global Domain Local Policy","Account->Global->DomainLocal->Permission","Azure Group Domain Local","None"],a:1},{q:"gMSA provides:",o:["User passwords","Auto-managed service account passwords","GPO management","DNS config"],a:1},{q:"LAPS prevents:",o:["Virus infections","Pass-the-hash with shared local admin passwords","Email phishing","DDoS attacks"],a:1}]},
+
+{mod:"Active Directory",id:"az800-3",title:"Hybrid Identity with Azure AD Connect",
+content:"Bridging on-premises AD with Azure AD for hybrid identity.\n\n**Azure AD Connect:** Syncs on-prem AD users and groups to Azure AD for single identity across cloud and on-prem.\n\n**Authentication Methods:** Password Hash Sync (PHS) — RECOMMENDED. Hash of hash synced. Simplest. Works if on-prem down! Enables Leaked Credential Detection. Pass-Through Auth (PTA) — validates against on-prem DC real-time. Password never in cloud. Requires agents. Federation (AD FS) — custom claims, smart card auth. Most complex.\n\n**Seamless SSO:** Domain-joined PCs auto-sign-in to Azure AD. Works with PHS and PTA.\n\n**Password Writeback:** Cloud password changes sync to on-prem. Required for Azure AD SSPR in hybrid.\n\n**Azure AD Connect Cloud Sync:** Lightweight alternative. Agent-based, no server. Multi-forest. Fewer features.\n\n**Azure AD Connect Health:** Monitor sync, ADFS, AD DS. Alerts on failures.\n\n**Filtering:** Sync by OU (recommended). Never sync service accounts!\n\n**Interview Tip:** PHS recommended — works offline, leaked credential detection. Seamless SSO for domain PCs. Password writeback for SSPR. Filter by OU.",
+quiz:[{q:"Recommended auth method:",o:["Federation","PTA","Password Hash Sync","LDAP"],a:2},{q:"PHS works when on-prem is:",o:["Must be online","Down/offline (still works)","Only with VPN","Never offline"],a:1},{q:"Password Writeback enables:",o:["Cloud password sync to on-prem for SSPR","Backup","Encryption","SSO"],a:0},{q:"Don't sync these to Azure AD:",o:["All users","Service accounts","Admin accounts","Guest accounts"],a:1}]},
+
+{mod:"Server Management",id:"az800-4",title:"Windows Admin Center & Hyper-V",
+content:"Windows Server management tools and Hyper-V virtualization.\n\n**Windows Admin Center (WAC):** Browser-based. One gateway manages ALL servers. Real-time CPU/memory/disk/network. Azure integration (backup, monitor, updates). Extensions for AD, DHCP, DNS.\n\n**Server Core vs Desktop:** Core has no GUI — smaller attack surface, fewer patches, less resources. USE FOR PRODUCTION. Desktop has full GUI — for learning.\n\n**Hyper-V — Type 1 Hypervisor:** Virtual Switches: External (physical NIC), Internal (host+VMs), Private (VMs only). Gen 1 (BIOS, IDE) vs Gen 2 (UEFI, Secure Boot, SCSI, vTPM, faster — USE THIS). Standard checkpoints (memory state — corrupts DBs!) vs Production (VSS consistent — USE IN PRODUCTION).\n\n**Live Migration:** Move running VM between hosts. ZERO downtime. Critical for maintenance.\n**Hyper-V Replica:** Async DR replication. RPO: 30sec/5min/15min.\n**Containers:** Windows Server (shared kernel, fast) vs Hyper-V isolation (separate kernel, secure).\n\n**Interview Tip:** WAC for modern management. Server Core for production. Gen 2 VMs. Production checkpoints. Live Migration for maintenance.",
+quiz:[{q:"WAC is:",o:["CLI tool","Browser-based management","PowerShell module","Azure portal"],a:1},{q:"Gen 2 VM supports:",o:["BIOS only","UEFI + Secure Boot + vTPM","Only Linux","No checkpoints"],a:1},{q:"Live Migration provides:",o:["Requires downtime","Zero-downtime VM move","Only storage move","Only containers"],a:1},{q:"Production checkpoints use:",o:["Memory state","VSS application-consistent snapshots","No data","Disk only"],a:1}]},
+
+{mod:"Networking",id:"az800-5",title:"DNS, DHCP & Remote Access",
+content:"Windows Server networking services form the infrastructure backbone.\n\n**DNS:** Primary (read-write), Secondary (read-only copy), Stub (NS records). AD-Integrated Zones stored IN AD, replicated with AD, most secure — RECOMMENDED. Conditional Forwarders for partner domains. Scavenging cleans stale records. DNSSEC prevents spoofing.\n\n**DHCP:** Scopes (IP ranges per subnet). Reservations (fixed IP for MAC). Options (gateway, DNS, domain). Failover: Active-Active (load balance) or Hot Standby. IPAM centralizes all DNS+DHCP management.\n\n**Remote Access:** Always On VPN (modern, per-app VPN, CA integration). DirectAccess (legacy, being replaced). Web Application Proxy (publish internal apps). NPS (Windows RADIUS for VPN/Wi-Fi/802.1X auth).\n\n**Interview Tip:** AD-Integrated DNS for security. DHCP failover for HA. Always On VPN replacing DirectAccess. NPS for RADIUS.",
+quiz:[{q:"AD-Integrated DNS is:",o:["Less secure","Most secure, replicated with AD","External only","Read-only"],a:1},{q:"DHCP Failover modes:",o:["Active-passive only","Active-Active or Hot Standby","Load balance only","No failover"],a:1},{q:"Always On VPN replaces:",o:["DNS","DirectAccess","DHCP","NPS"],a:1},{q:"NPS is Windows:",o:["DNS server","RADIUS server","DHCP server","File server"],a:1}]},
+
+{mod:"Networking",id:"az800-6",title:"Storage Spaces Direct & DFS",
+content:"Windows Server storage solutions.\n\n**Storage Spaces:** Pool physical disks. Resiliency: Simple (none), Mirror (2/3-way), Parity (RAID 5/6). **Storage Spaces Direct (S2D):** Local disks across cluster nodes. NO external SAN! Hyper-converged compute+storage.\n\n**DFS Namespace:** Single path (\\\\company\\files) to multiple servers. **DFS Replication:** Sync folders via RDC (only changes sent).\n\n**FSRM:** Quotas (hard/soft per folder). File Screening (block .exe). Storage Reports (largest files, dupes). Classification (auto-tag).\n\n**SMB 3.0:** Encryption, multichannel, RDMA. DISABLE SMBv1 (WannaCry)!\n\n**iSCSI:** Block storage over network. **Deduplication:** 30-80% savings.\n\n**Interview Tip:** S2D eliminates SAN costs. DFS for unified access. FSRM for quotas. Disable SMBv1.",
+quiz:[{q:"S2D needs:",o:["External SAN","Local disks in cluster nodes","NAS","Azure"],a:1},{q:"DFS Namespace:",o:["Backup only","Single path to multiple servers","DNS resolution","DHCP"],a:1},{q:"SMBv1 should be:",o:["Enabled","Disabled (security vulnerability)","Required","Used for legacy"],a:1},{q:"Data Dedup saves:",o:["5-10%","10-20%","30-80%","100%"],a:2}]},
+
+{mod:"Networking",id:"az800-7",title:"File Server Migration & Best Practices",
+content:"File server migration and storage best practices.\n\n**Storage Migration Service:** Migrate file servers including ALL data + permissions + identity (SIDs). Cutover: new server takes old name and IP. Users notice nothing! Steps: Install in WAC → Inventory source → Transfer data (incremental) → Cutover.\n\n**Azure File Sync:** Extend on-prem file servers to Azure. Cloud Tiering keeps frequently accessed files local, rest in Azure. Multi-site sync. Central backup.\n\n**Best Practices:** Access-Based Enumeration (users see only permitted folders). Shadow Copies for self-service file recovery. BranchCache for branch offices. Offline Files for disconnected work.\n\n**Permissions:** Share permissions broad (Everyone = Change). NTFS granular (specific groups). Effective = most restrictive of Share + NTFS.\n\n**Interview Tip:** Storage Migration Service for seamless migration. Azure File Sync for hybrid. ABE for security. Effective permissions = most restrictive of Share + NTFS.",
+quiz:[{q:"Storage Migration Service preserves:",o:["Only files","Files + permissions + identity + names/IPs","Only large files","Only databases"],a:1},{q:"Cloud Tiering keeps locally:",o:["Everything","Frequently accessed files only","Nothing","Only new files"],a:1},{q:"ABE shows users:",o:["All folders","Only folders they have permission to access","Only their home folder","Nothing"],a:1},{q:"Effective permissions:",o:["Most permissive","Most restrictive of Share + NTFS","Only NTFS","Only Share"],a:1}]}
+];
+
+
+function AZ800App() {
+  const [view, setView] = useState("home");
+  const [topicIdx, setTopicIdx] = useState(0);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [ans, setAns] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [prog, setProg] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("az800-prog")) || {}; } catch { return {}; }
+  });
+  const [intIdx, setIntIdx] = useState(0);
+  const [intShow, setIntShow] = useState(false);
+  const topRef = useRef(null);
+
+  useEffect(() => { try { localStorage.setItem("az800-prog", JSON.stringify(prog)); } catch {} }, [prog]);
+  useEffect(() => { topRef.current?.scrollIntoView({ behavior: "smooth" }); }, [topicIdx, view]);
+
+  const topic = L[topicIdx];
+  const modules = [...new Set(L.map(l => l.mod))];
+  const getModTopics = (m) => L.filter(l => l.mod === m);
+  const pct = Math.round(Object.keys(prog).filter(k => prog[k]).length / L.length * 100);
+  const c = COURSE.color;
+
+  const renderText = (text) => {
+    if (!text) return null;
+    const lines = text.split(/\\n|\n/);
+    return lines.map((line, i) => {
+      if (!line.trim()) return <div key={i} style={{ height: 12 }} />;
+      let html = line
+        .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:' + c + '">$1</strong>');
+      if (line.trim().startsWith("- ")) {
+        html = '<span style="color:' + c + ';margin-right:8px">\u25cf</span>' + line.trim().slice(2);
+      }
+      return <div key={i} style={{ marginBottom: 5, lineHeight: 1.85, fontSize: 15, color: "#dce1eb" }} dangerouslySetInnerHTML={{ __html: html }} />;
+    });
+  };
+
+  const ProgressBar = ({ p, h = 7 }) => (
+    <div style={{ width: "100%", height: h, borderRadius: h, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+      <div style={{ width: p + "%", height: "100%", borderRadius: h, background: "linear-gradient(90deg," + c + "," + c + "cc)", transition: "width 0.6s" }} />
+    </div>
+  );
+
+  const cardStyle = { background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 20, marginBottom: 12, transition: "all 0.2s" };
+  const btnStyle = { padding: "11px 22px", borderRadius: 11, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 14, transition: "all 0.15s" };
+
+  // ━━━ HOME VIEW ━━━
+  if (view === "home") {
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px 16px 60px" }}>
+          <div style={{ textAlign: "center", padding: "30px 0 20px" }}>
+            <div style={{ fontSize: 56, marginBottom: 6 }}>{COURSE.icon}</div>
+            <h1 style={{ fontSize: 28, fontWeight: 900, color: c, margin: "0 0 4px" }}>{COURSE.title}</h1>
+            <p style={{ color: "#8892a6", fontSize: 13, margin: "0 0 4px" }}>{COURSE.desc}</p>
+            <p style={{ color: "#5a6478", fontSize: 12, margin: "0 0 16px" }}>by <span style={{ color: "#FF6B35", fontWeight: 700 }}>Ram Mohan Pathak</span></p>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", maxWidth: 400, margin: "0 auto" }}>
+              <ProgressBar p={pct} />
+              <span style={{ fontSize: 15, fontWeight: 700, color: c }}>{pct}%</span>
+              <span style={{ fontSize: 11, color: "#5a6478" }}>{Object.keys(prog).filter(k => prog[k]).length}/{L.length}</span>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 8, margin: "0 0 20px", flexWrap: "wrap" }}>
+            {[
+              { v: L.length, l: "Lessons", ic: "\ud83d\udcd6" },
+              { v: L.reduce((a, t) => a + (t.quiz ? t.quiz.length : 0), 0), l: "Quiz Q's", ic: "\ud83d\udcdd" },
+              { v: COURSE.interview ? COURSE.interview.length : 0, l: "Interview", ic: "\ud83c\udf99\ufe0f" },
+              { v: COURSE.roles ? COURSE.roles.length : 0, l: "Roles", ic: "\ud83d\udcbc" }
+            ].map((s, i) => (
+              <div key={i} style={{ flex: "1 1 100px", ...cardStyle, textAlign: "center", padding: "12px 8px", cursor: "default" }}>
+                <div style={{ fontSize: 13 }}>{s.ic}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: c }}>{s.v}</div>
+                <div style={{ fontSize: 10, color: "#8892a6" }}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+
+          {modules.map((mod, mi) => {
+            const topics = getModTopics(mod);
+            return (
+              <div key={mi} style={{ marginBottom: 20 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: 7, background: c + "20", color: c, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13 }}>{mi + 1}</div>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: c, flex: 1 }}>{mod}</h3>
+                  <span style={{ fontSize: 11, color: "#5a6478" }}>{topics.filter(t => prog[t.id]).length}/{topics.length}</span>
+                </div>
+                {topics.map((t, ti) => {
+                  const idx = L.indexOf(t);
+                  const done = prog[t.id];
+                  return (
+                    <div key={t.id} onClick={() => { setTopicIdx(idx); setShowQuiz(false); setAns({}); setSubmitted(false); setView("topic"); }}
+                      style={{ ...cardStyle, display: "flex", alignItems: "center", gap: 10, padding: 14, cursor: "pointer", borderColor: done ? "#34d39930" : "rgba(255,255,255,0.04)" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.025)"; }}>
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: done ? "#34d39912" : "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0, color: done ? "#34d399" : "#5a6478" }}>
+                        {done ? "\u2705" : (mi + 1) + "." + (ti + 1)}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: "#e8ecf4" }}>{t.title}</div>
+                        {t.quiz && <div style={{ fontSize: 10, color: "#5a6478", marginTop: 2 }}>\ud83d\udcdd {t.quiz.length} quiz questions</div>}
+                      </div>
+                      <span style={{ fontSize: 16, color: "#5a6478" }}>\u2192</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+            {COURSE.interview && COURSE.interview.length > 0 && (
+              <div style={{ ...cardStyle, cursor: "pointer" }} onClick={() => setView("interview")}>
+                <h3 style={{ margin: "0 0 4px", fontSize: 15, color: "#a78bfa" }}>\ud83c\udf99\ufe0f Interview Prep</h3>
+                <p style={{ fontSize: 11, color: "#8892a6", margin: 0 }}>{COURSE.interview.length} Q&As with model answers</p>
+              </div>
+            )}
+            {COURSE.roles && COURSE.roles.length > 0 && (
+              <div style={{ ...cardStyle, cursor: "pointer" }} onClick={() => setView("career")}>
+                <h3 style={{ margin: "0 0 4px", fontSize: 15, color: "#34d399" }}>\ud83d\udcbc Career & Resume</h3>
+                <p style={{ fontSize: 11, color: "#8892a6", margin: 0 }}>{COURSE.roles.length} roles + resume bullets</p>
+              </div>
+            )}
+          </div>
+
+          <div style={{ textAlign: "center", padding: "20px 0", color: "#3d4556", fontSize: 10 }}>Smart Tutor Ram by Ram Mohan Pathak</div>
+        </div>
+        <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:2px}button:hover{filter:brightness(1.08)}button:active{transform:scale(.98)}`}</style>
+      </div>
+    );
+  }
+
+  // ━━━ TOPIC VIEW ━━━
+  if (view === "topic" && topic) {
+    const score = topic.quiz ? topic.quiz.filter((q, i) => ans[i] === q.a).length : 0;
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <div ref={topRef} />
+        <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(10,14,26,0.92)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 48, backdropFilter: "blur(16px)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: "#e8ecf4", cursor: "pointer", fontSize: 18 }}>\u2190</button>
+            <span style={{ fontWeight: 800, fontSize: 13, color: c }}>{COURSE.title.split(":")[0]}</span>
+          </div>
+          <span style={{ fontSize: 11, color: "#5a6478" }}>{topicIdx + 1}/{L.length}</span>
+        </nav>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "16px 14px 60px" }}>
+          <div style={{ display: "inline-block", padding: "4px 12px", borderRadius: 16, fontSize: 11, fontWeight: 600, background: c + "18", color: c, marginBottom: 6 }}>{topic.mod}</div>
+          <h2 style={{ margin: "6px 0 14px", fontSize: 22, fontWeight: 800, color: "#e8ecf4" }}>{topic.title}</h2>
+
+          {topic.quiz && topic.quiz.length > 0 && (
+            <div style={{ display: "flex", gap: 3, marginBottom: 16, background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: 3 }}>
+              <button onClick={() => setShowQuiz(false)} style={{ ...btnStyle, flex: 1, background: !showQuiz ? c : "transparent", color: !showQuiz ? "#fff" : "#8892a6" }}>\ud83d\udcd6 Lesson</button>
+              <button onClick={() => { setShowQuiz(true); setAns({}); setSubmitted(false); }} style={{ ...btnStyle, flex: 1, background: showQuiz ? c : "transparent", color: showQuiz ? "#fff" : "#8892a6" }}>\ud83d\udcdd Quiz ({topic.quiz.length})</button>
+            </div>
+          )}
+
+          {!showQuiz ? (
+            <div style={{ ...cardStyle, cursor: "default", padding: 28, lineHeight: 1.85 }}>
+              {renderText(topic.content)}
+              <div style={{ marginTop: 24, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {!prog[topic.id] ? (
+                  <button onClick={() => setProg(p => ({ ...p, [topic.id]: true }))} style={{ ...btnStyle, background: "#34d399", color: "#000" }}>\u2705 Mark Complete</button>
+                ) : (
+                  <span style={{ display: "inline-block", padding: "8px 16px", borderRadius: 16, fontSize: 12, fontWeight: 600, background: "#34d39918", color: "#34d399" }}>\u2705 Completed</span>
+                )}
+                {topicIdx < L.length - 1 && (
+                  <button onClick={() => { setTopicIdx(topicIdx + 1); setShowQuiz(false); setAns({}); setSubmitted(false); }} style={{ ...btnStyle, background: c + "20", color: c }}>Next \u2192</button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div>
+              {topic.quiz.map((q, qi) => {
+                const sel = ans[qi];
+                const isRight = submitted && sel === q.a;
+                const isWrong = submitted && sel !== undefined && sel !== q.a;
+                return (
+                  <div key={qi} style={{ ...cardStyle, cursor: "default", borderColor: isRight ? "#34d39930" : isWrong ? "#f8717130" : "rgba(255,255,255,0.04)" }}>
+                    <p style={{ margin: "0 0 12px", fontWeight: 700, fontSize: 14, color: "#e8ecf4" }}>Q{qi + 1}: {q.q}</p>
+                    {q.o.map((opt, oi) => {
+                      const isSel = sel === oi;
+                      const green = submitted && oi === q.a;
+                      const red = submitted && isSel && oi !== q.a;
+                      return (
+                        <button key={oi} onClick={() => !submitted && setAns(p => ({ ...p, [qi]: oi }))}
+                          style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 16px", marginBottom: 6, borderRadius: 10,
+                            border: "1px solid " + (green ? "#34d39930" : red ? "#f8717130" : isSel ? c + "30" : "transparent"),
+                            background: green ? "#34d39912" : red ? "#f8717112" : isSel ? c + "12" : "rgba(255,255,255,0.02)",
+                            color: green ? "#34d399" : red ? "#f87171" : isSel ? c : "#e8ecf4",
+                            cursor: submitted ? "default" : "pointer", fontWeight: 500, fontSize: 13 }}>
+                          {String.fromCharCode(65 + oi)}. {opt}{green ? " \u2705" : ""}{red ? " \u274c" : ""}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+              {!submitted ? (
+                <button onClick={() => setSubmitted(true)} disabled={Object.keys(ans).length !== topic.quiz.length}
+                  style={{ ...btnStyle, width: "100%", padding: 13, fontSize: 15, background: c, color: "#fff", opacity: Object.keys(ans).length === topic.quiz.length ? 1 : 0.4 }}>Submit Answers</button>
+              ) : (
+                <div style={{ ...cardStyle, cursor: "default", textAlign: "center" }}>
+                  <div style={{ fontSize: 36 }}>{score === topic.quiz.length ? "\ud83c\udf89" : "\ud83d\udcda"}</div>
+                  <h3 style={{ margin: "6px 0", color: "#e8ecf4" }}>Score: {score}/{topic.quiz.length}</h3>
+                  <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 10 }}>
+                    <button onClick={() => { setAns({}); setSubmitted(false); }} style={{ ...btnStyle, background: c + "20", color: c }}>Retry</button>
+                    {topicIdx < L.length - 1 && <button onClick={() => { setTopicIdx(topicIdx + 1); setShowQuiz(false); setAns({}); setSubmitted(false); }} style={{ ...btnStyle, background: c, color: "#fff" }}>Next \u2192</button>}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:2px}button:hover{filter:brightness(1.08)}button:active{transform:scale(.98)}`}</style>
+      </div>
+    );
+  }
+
+  // ━━━ INTERVIEW VIEW ━━━
+  if (view === "interview" && COURSE.interview) {
+    const q = COURSE.interview[intIdx];
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(10,14,26,0.92)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 48, backdropFilter: "blur(16px)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: "#e8ecf4", cursor: "pointer", fontSize: 18 }}>\u2190</button>
+            <span style={{ fontWeight: 800, fontSize: 13, color: "#a78bfa" }}>\ud83c\udf99\ufe0f Interview Prep</span>
+          </div>
+          <span style={{ fontSize: 11, color: "#5a6478" }}>{intIdx + 1}/{COURSE.interview.length}</span>
+        </nav>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "16px 14px 60px" }}>
+          <ProgressBar p={(intIdx + 1) / COURSE.interview.length * 100} h={4} />
+          <div style={{ ...cardStyle, marginTop: 14, cursor: "default" }}>
+            <p style={{ fontSize: 10, color: "#5a6478", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 6px" }}>Interviewer asks:</p>
+            <h3 style={{ margin: 0, fontSize: 18, lineHeight: 1.5, color: "#e8ecf4" }}>"{q.q}"</h3>
+          </div>
+          {!intShow ? (
+            <button onClick={() => setIntShow(true)} style={{ ...btnStyle, width: "100%", padding: 13, fontSize: 15, background: "linear-gradient(135deg, #7c3aed, #ec4899)", color: "#fff", marginTop: 8 }}>\ud83d\udca1 Reveal Model Answer</button>
+          ) : (
+            <div style={{ ...cardStyle, marginTop: 8, cursor: "default", borderColor: "#7c3aed25" }}>
+              <p style={{ fontSize: 10, color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 8px" }}>Model Answer:</p>
+              {renderText(q.a)}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
+            <button onClick={() => { setIntIdx(i => i - 1); setIntShow(false); }} disabled={intIdx === 0} style={{ ...btnStyle, flex: 1, background: "rgba(255,255,255,0.04)", color: "#e8ecf4", opacity: intIdx === 0 ? 0.3 : 1 }}>\u2190 Prev</button>
+            <button onClick={() => { setIntIdx(i => i + 1); setIntShow(false); }} disabled={intIdx === COURSE.interview.length - 1} style={{ ...btnStyle, flex: 1, background: c, color: "#fff", opacity: intIdx === COURSE.interview.length - 1 ? 0.3 : 1 }}>Next \u2192</button>
+          </div>
+        </div>
+        <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:2px}button:hover{filter:brightness(1.08)}button:active{transform:scale(.98)}`}</style>
+      </div>
+    );
+  }
+
+  // ━━━ CAREER VIEW ━━━
+  if (view === "career") {
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(10,14,26,0.92)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "0 16px", display: "flex", alignItems: "center", height: 48, gap: 8, backdropFilter: "blur(16px)" }}>
+          <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: "#e8ecf4", cursor: "pointer", fontSize: 18 }}>\u2190</button>
+          <span style={{ fontWeight: 800, fontSize: 13, color: "#34d399" }}>\ud83d\udcbc Career Guide</span>
+        </nav>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "16px 14px 60px" }}>
+          {COURSE.roles && (
+            <div style={{ ...cardStyle, cursor: "default" }}>
+              <h3 style={{ margin: "0 0 12px", fontSize: 17, color: "#34d399" }}>\ud83d\udcbc Roles After This Certification</h3>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {COURSE.roles.map((r, i) => <span key={i} style={{ display: "inline-block", padding: "6px 14px", borderRadius: 18, fontSize: 12, fontWeight: 600, background: "#34d39912", color: "#34d399" }}>{r}</span>)}
+              </div>
+            </div>
+          )}
+          {COURSE.resume && (
+            <div style={{ ...cardStyle, cursor: "default" }}>
+              <h3 style={{ margin: "0 0 12px", fontSize: 17, color: c }}>\ud83d\udcc4 Resume Bullet Points</h3>
+              {COURSE.resume.map((b, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                  <span style={{ color: c, fontSize: 14, marginTop: 3, flexShrink: 0 }}>\u25cf</span>
+                  <p style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: "#e8ecf4" }}>{b}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:2px}button:hover{filter:brightness(1.08)}button:active{transform:scale(.98)}`}</style>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(AZ800App));
+</script>
+</body>
+</html>

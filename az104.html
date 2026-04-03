@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Tutor Ram - AZ-104: Azure Administrator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js"></script>
+<style>body{margin:0;padding:0;background:#0a0e1a}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+
+const COURSE = {
+  title: "AZ-104: Azure Administrator", icon: "⚙️", color: "#00A4EF",
+  desc: "Core Azure admin skills — identity, governance, networking, compute, storage, and monitoring.",
+  roles: ["Azure Administrator","Cloud Infrastructure Admin","Cloud Engineer","DevOps Engineer","Azure Platform Engineer","Site Reliability Engineer","Cloud Operations Engineer","Azure Solutions Architect Jr."],
+  resume: [
+    "Administered Azure AD: user lifecycle, dynamic groups, RBAC, PIM, Conditional Access for 1000+ users",
+    "Managed governance: Management Groups, Azure Policy (audit/deny/remediate), locks, mandatory tags, Blueprints",
+    "Deployed VMs, VM Scale Sets, App Service with deployment slots, ACI, ACR, and AKS clusters",
+    "Configured networking: VNets, NSGs, peering, VPN Gateway, ExpressRoute, Azure Firewall, DNS, UDR",
+    "Implemented storage: Blob lifecycle policies, Azure Files + File Sync, RBAC access, immutable WORM storage",
+    "Automated with Bicep/ARM templates, CI/CD pipelines, and Azure Automation runbooks",
+    "Configured monitoring: Azure Monitor, Log Analytics (KQL), alerts, action groups, Application Insights",
+    "Managed backup/DR: Azure Backup, Recovery Services Vault, Azure Site Recovery with quarterly test failovers"
+  ],
+  interview: [
+    {q:"Walk through setting up a new Azure environment.",a:"Start with Management Groups for organizational hierarchy. Create separate Subscriptions for prod/dev/staging. Define naming conventions and enforce mandatory tags (CostCenter, Owner, Environment) via Azure Policy.\n\nRBAC: Assign to groups not users, at Resource Group scope. Cloud Team as Contributor, Dev Team scoped to dev RGs only.\n\nNetworking: Hub-spoke with Azure Firewall. UDRs force spoke traffic through firewall. NSGs on every subnet. Bastion for admin access.\n\nMonitoring: Azure Monitor + Log Analytics workspace. Diagnostic settings on all resources. Alerts with action groups. Budget alerts at 80/100%."},
+    {q:"Production VM is unresponsive. Troubleshoot.",a:"1) Check Azure Service Health for platform issues. 2) VM metrics (CPU/memory/disk) in Monitor. 3) Boot Diagnostics screenshot + serial console. 4) NSG rules via IP Flow Verify. 5) Activity Log — did someone modify it? 6) Serial console for OS logs. 7) Restart VM. 8) Redeploy to new host. 9) If data critical — attach OS disk to rescue VM. 10) Document and post-mortem."},
+    {q:"How do you manage Azure costs?",a:"Visibility: Tags on everything (enforced by Policy). Cost Analysis by resource/tag. Optimization: Right-size VMs via Advisor (many run at 5% CPU). Reserved Instances for production (72% savings). Spot VMs for batch (90% off). Auto-shutdown dev/test. Blob lifecycle policies. Governance: Budget alerts at 80/100%. Monthly cost reviews. Advisor weekly. Real result: reduced $50K/month to $17K."},
+    {q:"Explain your IaC approach.",a:"Bicep over ARM JSON — cleaner syntax, module support, compiles to ARM. Structure: networking, compute, security modules — each independently testable. CI/CD: push to Git → PR triggers what-if validation → deploy to dev → automated tests → staging → manual approval → production. Azure Automation for operational tasks (VM shutdown schedules, compliance checks, cert rotation)."},
+    {q:"Design backup and DR strategy.",a:"Azure Backup for VMs/SQL/Files via Recovery Services Vault. Configurable policies: daily backups, 30-day retention, yearly archives. GRS vault for cross-region. Azure Site Recovery for VM replication to secondary region — continuous replication, RPO minutes. Recovery Plans with ordered failover (DB→App→Web). Test failover quarterly in isolated environment — zero production impact."}
+  ]
+};
+const L = [
+{mod:"Identity & Governance",id:"az104-1",title:"Azure AD Users & Groups",
+content:`Managing identities at scale is your first responsibility as an Azure Administrator.
+
+**User Types:**
+**Cloud Users:** Created directly in Azure AD. No on-prem counterpart. For cloud-only organizations or cloud-specific service accounts.
+**Synced Users:** Created in on-premises AD, synced via Azure AD Connect. Most common in enterprises with existing infrastructure.
+**Guest Users (B2B):** External people — partners, contractors, vendors. Sign in with their own credentials but appear in your directory.
+
+**Bulk Operations:**
+Creating one user at a time works for 5 people. For 500 new hires from HR's spreadsheet, use PowerShell: Import-Csv users.csv | ForEach-Object { New-AzADUser ... } or the Admin Center bulk create with CSV template.
+
+**Group Types:**
+**Security Groups:** For permissions and access control. Assign RBAC roles, manage access to applications.
+**Microsoft 365 Groups:** Create shared mailbox + SharePoint site + Teams team + Planner + OneNote automatically.
+**Mail-enabled Security Groups:** Security group that can also receive email.
+
+**Membership Types:**
+**Assigned:** Manual — admin adds/removes members individually.
+**Dynamic User:** Automatic based on user attributes. Rule: user.department -eq "Engineering" AND user.jobTitle -contains "Developer". Join Engineering? Automatically added. Leave? Automatically removed. Requires Azure AD Premium P1.
+**Dynamic Device:** Same concept for devices based on device attributes (OS version, manufacturer).
+
+**Administrative Units:**
+Delegate admin to specific user scopes. "US IT Admins" can manage only users in the US Admin Unit — cannot see or touch European users. Essential for large organizations with regional IT teams.
+
+**Self-Service Password Reset (SSPR):**
+Users reset forgotten passwords without calling IT. Verify identity via Authenticator app, phone, email, or security questions. Reduces helpdesk tickets by 40%+. Requires P1. With Password Writeback, cloud resets sync back to on-prem AD.
+
+**Azure AD Connect — Hybrid Identity:**
+Syncs on-prem AD to Azure AD. Authentication methods:
+**Password Hash Sync (PHS) — RECOMMENDED:** Hash of hash synced. Simplest. Works if on-prem is down. Enables Leaked Credential Detection.
+**Pass-Through Auth (PTA):** Real-time on-prem validation. Password never in cloud. Requires agents on-prem.
+**Federation (AD FS):** Custom claims, smart card auth. Most complex.
+**Seamless SSO:** Domain-joined PCs auto-sign-in. Works with PHS and PTA.
+
+**Interview Tip:**
+"I manage identities at scale using Dynamic Groups for auto-membership, Administrative Units for delegation, and SSPR for helpdesk reduction. PHS recommended for hybrid identity — works offline and enables leaked credential detection."`,
+quiz:[{q:"Dynamic Group membership determined by:",o:["Manual admin selection","User attribute rules (automatic)","First-come basis","Random assignment"],a:1},{q:"Recommended AD Connect auth:",o:["Federation (ADFS)","Pass-Through Auth","Password Hash Sync","LDAP"],a:2},{q:"SSPR reduces helpdesk tickets by:",o:["10%","25%","40%+","90%"],a:2},{q:"Administrative Units allow:",o:["Managing all users globally","Delegating admin to specific user scopes","Only group management","Only password resets"],a:1}]},
+
+{mod:"Identity & Governance",id:"az104-2",title:"RBAC & Custom Roles",
+content:`RBAC controls WHO can do WHAT on WHICH resources. It's the authorization framework for all of Azure.
+
+**The RBAC Formula:**
+Security Principal + Role Definition + Scope = Role Assignment
+
+**Security Principals (WHO):**
+User, Security Group, Service Principal (app identity), or Managed Identity (Azure-managed app identity — no credentials needed).
+
+**Key Built-in Roles:**
+**Owner:** Full access + can assign roles to others. For subscription owners and lead architects.
+**Contributor:** Full access but CANNOT assign roles. For developers and operators.
+**Reader:** View everything, change nothing. For auditors and stakeholders.
+**User Access Administrator:** Only manages role assignments. Can grant others access.
+**VM Contributor:** Manage VMs but not the VNet or storage they connect to.
+**Network Contributor:** Manage all networking resources.
+**Storage Blob Data Reader/Contributor/Owner:** Data-plane access to blob storage.
+
+**Custom Roles:**
+When built-in roles are too broad or narrow. Define in JSON:
+**Actions:** What they CAN do (e.g., Microsoft.Compute/virtualMachines/start/action)
+**NotActions:** Exceptions to Actions (e.g., Microsoft.Compute/virtualMachines/delete)
+**DataActions:** Data-plane operations (e.g., Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read)
+**AssignableScopes:** Where the role can be used
+
+Example: "VM Operator" custom role — can start, stop, restart VMs but CANNOT delete them or change configurations.
+
+**Scope Hierarchy (WHERE):**
+Management Group → Subscription → Resource Group → Resource. Permissions inherit DOWNWARD. Contributor at Subscription = Contributor on ALL resource groups and resources below.
+
+**Best Practices:**
+Assign to GROUPS, not individual users. Assign at the NARROWEST scope (usually Resource Group). Use Deny Assignments to explicitly block specific actions. Review assignments quarterly with Access Reviews (P2).
+
+**Interview Tip:**
+"I implement least-privilege RBAC by assigning roles to security groups at the Resource Group scope. Custom roles when built-in are too broad — like VM Operator that allows start/stop but prevents deletion."`,
+quiz:[{q:"Contributor role CANNOT:",o:["Create resources","Delete resources","Assign roles to others","Modify resources"],a:2},{q:"RBAC permissions inherit:",o:["Upward only","Downward through hierarchy","Both directions","No inheritance"],a:1},{q:"Custom roles define:",o:["Only allowed actions","Actions, NotActions, DataActions, and Scopes","Only data access","Only network access"],a:1},{q:"Best practice for RBAC assignment:",o:["Assign to individual users at subscription level","Assign to groups at Resource Group scope","Give everyone Owner","Use only built-in roles"],a:1}]},
+
+{mod:"Identity & Governance",id:"az104-3",title:"Azure Policy, Locks & Cost Management",
+content:`Azure Policy enforces rules on resources. Locks prevent accidents. Cost Management controls spending.
+
+**Azure Policy — Enforce Rules:**
+**Audit:** Report non-compliant resources. Doesn't block. Use for assessment.
+**Deny:** Block creation of non-compliant resources. "All storage must use HTTPS" — deny without HTTPS.
+**DeployIfNotExists:** Auto-remediate. "VM missing Monitor agent? Deploy it automatically."
+**Modify:** Change properties. "Add tag Environment:Unknown to untagged resources."
+
+**Initiatives:** Group related policies. "CIS Benchmark" initiative = 150+ policies for security compliance. Assign the initiative, not individual policies.
+
+**Exemptions:** Temporarily exclude resources from policy evaluation with justification and expiration date.
+
+**Resource Locks:**
+**CanNotDelete:** Prevents deletion. Can still modify. For production databases.
+**ReadOnly:** Prevents ALL changes. For compliance-critical resources.
+Locks override RBAC — even Owners can't delete a locked resource without first removing the lock.
+
+**Tags — Metadata for Everything:**
+Key-value pairs: CostCenter:"IT-12345", Owner:"jsmith", Environment:"Production"
+Enforce mandatory tags via Policy: "Deny resource creation if CostCenter tag is missing."
+Use for: cost allocation, automation (auto-shutdown tagged "DevTest" at 7PM), compliance reporting.
+
+**Cost Management:**
+**Cost Analysis:** Breakdown by resource, resource group, tag, location, or service. Filter by time period.
+**Budgets:** Monthly spending limits with alerts at 80%, 100%, or custom thresholds. Trigger Action Groups (email, webhook, Azure Function).
+**Azure Advisor:** AI recommendations for Cost (right-size VMs, delete unused), Security, Reliability, Performance.
+**Subscriptions:** EA (enterprise volume), PAYG (credit card), CSP (partner-managed), Free Trial.
+
+**Moving Resources:** Resources can move between Resource Groups and Subscriptions (with restrictions). Some resources can't move — always check documentation first.
+
+**Interview Tip:**
+"I combine Deny policies for hard guardrails (require encryption), DeployIfNotExists for auto-remediation (deploy monitor agents), and Audit for compliance visibility. Mandatory tags enforced by Policy enable cost tracking and automation. Budget alerts at 80% catch overruns early."`,
+quiz:[{q:"Azure Policy DeployIfNotExists:",o:["Blocks resources","Auto-remediates by deploying missing configs","Only reports","Deletes non-compliant"],a:1},{q:"Resource Lock ReadOnly means:",o:["Only admins can read","Nobody can modify or delete","Only delete blocked","Resource encrypted"],a:1},{q:"Tags are enforced via:",o:["Manual effort only","Azure Policy (deny if tag missing)","Azure Monitor","RBAC"],a:1},{q:"Budget alerts should trigger at:",o:["Only when exceeded","80% and 100% thresholds","Only 50%","Never — just review monthly"],a:1}]},
+
+{mod:"Networking",id:"az104-4",title:"VNets, Subnets & NSGs",
+content:`**What is a Virtual Network (VNet)?**
+A Virtual Network is your own private network inside Azure. Think of it like building a gated community in the cloud. You define the boundaries (address space like 10.0.0.0/16 = 65,536 IPs), create streets (subnets), and set up security guards (NSGs). Everything inside communicates freely. Outside needs explicit permission.
+
+Azure reserves 5 IPs per subnet for internal use (network address, default gateway, 2 DNS IPs, broadcast). A /24 subnet gives 251 usable IPs.
+
+**What is a Subnet?**
+Subnets divide your VNet into logical sections. Best practice: separate subnets for each tier. WebSubnet (10.0.1.0/24) for internet-facing web servers. AppSubnet (10.0.2.0/24) for business logic. DBSubnet (10.0.3.0/24) for databases. This separation lets you apply different security rules per tier.
+
+**What is a Network Security Group (NSG)?**
+An NSG is a mini-firewall attached to a subnet or NIC. Contains rules with priority numbers (lowest number = highest priority, evaluated first). Default rules: AllowVNetInBound (VMs talk freely), AllowAzureLBInBound (health probes), DenyAllInBound (block internet). You add custom rules: Priority 100 Allow HTTPS from Internet to WebSubnet, Priority 200 Allow SQL from AppSubnet to DBSubnet.
+
+Apply NSGs at subnet level (recommended). If both subnet and NIC NSGs exist, both evaluate and most restrictive wins.
+
+**Application Security Groups (ASGs):**
+Tag VMs logically (WebServers, AppServers, DBServers) instead of using IP addresses. NSG rules reference tags: Allow TCP 443 from ASG:WebServers to ASG:AppServers. Add a new VM to the ASG and it inherits all rules automatically.
+
+**VNet Peering:**
+Connect two VNets over Microsoft backbone. CRITICAL: NOT transitive! A peers with B, B peers with C does NOT mean A can reach C. This is why hub-spoke topology exists.
+
+**Hub-Spoke Topology:**
+Hub VNet has Azure Firewall, VPN Gateway, Bastion. Spoke VNets have workloads. All spokes peer with hub. All traffic goes through hub firewall via UDRs.
+
+**Azure DNS:**
+Public zones host your domains. Private zones provide internal resolution with auto-registration (VMs get DNS records automatically).
+
+**Interview Tip:**
+"I design hub-spoke with NSGs on every subnet using ASGs for logical grouping. Private DNS zones with auto-registration. UDRs force spoke traffic through centralized firewall."
+
+**VNet — Your Private Network:**
+You define the address space (10.0.0.0/16 = 65,536 addresses). Everything inside communicates freely. Outside needs explicit permission. Think of it like a gated community — residents move freely, visitors need an invitation.
+
+**Subnets — Logical Divisions:**
+Divide your VNet into tiers: WebSubnet (10.0.1.0/24 = 251 usable IPs), AppSubnet (10.0.2.0/24), DBSubnet (10.0.3.0/24). Azure reserves 5 IPs per subnet (network address, default gateway, 2 DNS IPs, broadcast).
+
+**NSGs — Firewall Rules:**
+Stateful rules evaluated by priority (lowest number = highest priority). Default rules: allow VNet-to-VNet, allow Azure Load Balancer probes, deny all internet inbound.
+
+Add rules like: Priority 100 — Allow HTTPS from Internet to WebSubnet. Priority 200 — Allow SQL (1433) from AppSubnet to DBSubnet. Priority 300 — Deny everything else.
+
+Apply at subnet level (recommended) or NIC level. If both exist, both are evaluated — most restrictive wins.
+
+**Application Security Groups (ASGs):**
+Instead of using IP addresses in NSG rules, tag VMs logically: "WebServers", "AppServers", "DBServers". Rules reference ASGs: "Allow TCP 443 from ASG:WebServers to ASG:AppServers". When you add a new web server, just add it to the ASG — no rule changes needed.
+
+**VNet Peering:**
+Connect two VNets so resources communicate over Microsoft backbone. CRITICAL: NOT transitive! A↔B and B↔C does NOT mean A↔C can communicate. This is why hub-spoke topology exists.
+
+**Hub-Spoke Topology:**
+Central Hub VNet: Azure Firewall, VPN Gateway, Bastion, shared services. Spoke VNets: one per application/team. All spokes peer with hub. All traffic routes through hub firewall.
+
+**DNS:**
+Azure DNS: public zones (host domains on Azure nameservers), private zones (internal resolution with auto-registration — VMs get DNS records automatically when created).
+
+**Interview Tip:**
+"I design hub-spoke topologies with NSGs on every subnet using ASGs for logical grouping. Azure DNS private zones with auto-registration for internal resolution. Peering connects spokes to hub, and UDRs force traffic through the centralized firewall."`,
+quiz:[{q:"Azure reserves per subnet:",o:["2 IPs","3 IPs","5 IPs","10 IPs"],a:2},{q:"VNet Peering is transitive?",o:["Yes always","No — need hub for transitivity","Only in same region","Only with ExpressRoute"],a:1},{q:"NSGs evaluate rules by:",o:["Alphabetical order","Random order","Priority number (lowest = highest priority)","Creation date"],a:2},{q:"ASGs allow NSG rules to reference:",o:["IP addresses only","Logical VM groups by tag","Subnet names","Resource group names"],a:1}]},
+
+{mod:"Networking",id:"az104-5",title:"Firewall, UDR, Private Endpoints & Load Balancing",
+content:`Advanced networking: force traffic through inspection, secure PaaS services, and distribute load.
+
+**Azure Firewall:**
+Cloud-native managed firewall. FQDN filtering (allow *.microsoft.com, block *.facebook.com). Threat intelligence (block known malicious IPs). DNAT rules (publish internal services). Premium tier: TLS inspection (decrypt HTTPS for inspection), IDPS (intrusion detection).
+
+Deploy in the hub VNet of your hub-spoke topology.
+
+**User-Defined Routes (UDR):**
+Override Azure's default routing. Critical pattern: create route table with 0.0.0.0/0 → Azure Firewall's private IP. Apply to every spoke subnet. Now ALL internet traffic MUST pass through the firewall.
+
+Route priority: UDR (highest) → BGP → System routes (lowest).
+
+**Private Endpoints vs Service Endpoints:**
+**Service Endpoints:** Free. Routes PaaS traffic over Azure backbone. But service keeps public IP. Can't access from on-prem via VPN. Only within the VNet.
+**Private Endpoints:** Costs money. Gives PaaS service a PRIVATE IP inside your VNet (e.g., SQL at 10.0.5.4). Accessible from everywhere connected to VNet (including on-prem via VPN). Eliminates public exposure. Requires Private DNS Zone.
+
+Always prefer Private Endpoints for production — they're more secure.
+
+**Load Balancing Decision Tree:**
+**Global HTTP:** Azure Front Door (anycast CDN + WAF + instant failover)
+**Regional HTTP:** Application Gateway (URL routing + SSL termination + WAF v2)
+**Regional non-HTTP:** Azure Load Balancer (L4, TCP/UDP, HA Ports for NVAs)
+**Global non-HTTP:** Traffic Manager (DNS routing) + Load Balancer
+
+**Network Watcher:**
+IP Flow Verify: "Is traffic blocked by NSG?" — your first troubleshooting step.
+Next Hop: "Where does this packet go?" — verify routing.
+Connection Troubleshoot: End-to-end connectivity test.
+Packet Capture: Record traffic for Wireshark analysis.
+NSG Flow Logs + Traffic Analytics: Complete visibility — geo maps, top talkers, security insights.
+
+**Interview Tip:**
+"UDRs force all spoke traffic through Azure Firewall for inspection. Private Endpoints for all PaaS services eliminate public exposure. Front Door globally, App Gateway per region, Internal LB for backends. Network Watcher IP Flow Verify is my first troubleshooting step."`,
+quiz:[{q:"UDR 0.0.0.0/0 → Firewall does:",o:["Blocks all traffic","Forces all internet traffic through Firewall","Creates a VPN","Enables scaling"],a:1},{q:"Private Endpoint gives PaaS:",o:["Public IP","Private IP inside your VNet","DNS only","Load balancing"],a:1},{q:"For global HTTP with CDN + WAF:",o:["Azure Load Balancer","Traffic Manager","Azure Front Door","Application Gateway"],a:2},{q:"First troubleshooting step for connectivity:",o:["Restart VM","IP Flow Verify in Network Watcher","Check DNS","Call Microsoft"],a:1}]},
+
+{mod:"Compute",id:"az104-6",title:"Virtual Machines & Scale Sets",
+content:`VMs are the most common Azure resource. Understanding sizing, availability, and scaling is essential.
+
+**VM Sizing:**
+**B-series (Burstable):** Dev/test, low-traffic websites. Cheap. Accumulates CPU credits when idle, spends during spikes.
+**D-series (General Purpose):** Balanced CPU/memory. Most production workloads — web servers, app servers.
+**E-series (Memory Optimized):** High memory. Databases, in-memory caching, analytics.
+**F-series (Compute Optimized):** High CPU. Batch processing, gaming, scientific computing.
+**N-series (GPU):** NVIDIA GPUs. Machine learning, video rendering, scientific simulation.
+
+**Availability Options (know the SLAs!):**
+**Single VM (Premium SSD):** 99.9% SLA (8.76 hours downtime/year)
+**Availability Set:** Spreads VMs across fault domains (different racks) and update domains (patched at different times). 99.95% SLA.
+**Availability Zones:** Spreads across physically separate BUILDINGS with independent power and networking. 99.99% SLA.
+**VM Scale Sets:** Auto-scale from 1 to 1,000 VMs based on metrics. Scale-out rule: "If CPU > 70% for 5 minutes, add 1 VM." Scale-in rule: "If CPU < 30% for 10 minutes, remove 1 VM."
+
+**VM Extensions:**
+Custom Script Extension: Run PowerShell/bash at deployment (install software, configure settings).
+Azure Monitor Agent: Send metrics and logs to Log Analytics.
+Defender for Endpoint: Security agent.
+DSC (Desired State Configuration): Ensure VMs stay configured correctly.
+
+**Azure Bastion:** Secure RDP/SSH through Azure portal over TLS. No public IP needed on VMs. Deploy in hub VNet, accessible across peered spokes.
+
+**VM Backup:** Azure Backup → Recovery Services Vault. App-consistent snapshots. Instant restore from snapshots (minutes!). File-level recovery. Cross-region restore with GRS vaults.
+
+**Interview Tip:**
+"I deploy production VMs across Availability Zones for 99.99% SLA. Scale Sets for auto-scaling web tiers based on CPU metrics. Bastion for secure admin access without public IPs. Azure Backup with Recovery Services Vault for app-consistent protection."`,
+quiz:[{q:"Availability Zones SLA:",o:["99.9%","99.95%","99.99%","100%"],a:2},{q:"VM Scale Sets auto-scale up to:",o:["10 VMs","100 VMs","1,000 VMs","Unlimited"],a:2},{q:"N-series VMs are for:",o:["Low-traffic websites","General purpose","GPU workloads (ML, rendering)","Database hosting"],a:2},{q:"Azure Bastion provides:",o:["DNS hosting","Secure RDP/SSH without VM public IPs","Load balancing","Auto-scaling"],a:1}]},
+
+{mod:"Compute",id:"az104-7",title:"App Service, Containers & IaC",
+content:`PaaS compute and Infrastructure as Code automate and modernize your environment.
+
+**Azure App Service (PaaS):**
+Host web apps without managing servers. Supports .NET, Java, Node.js, Python, PHP, Ruby.
+
+**Deployment Slots:** The killer feature. Deploy new version to "staging" slot → test it → swap staging↔production in seconds with zero downtime. If something breaks, swap back instantly. Slot settings can be "sticky" (don't swap with the app — like connection strings pointing to different databases per environment).
+
+**Auto-scaling:** Scale based on CPU, memory, HTTP queue length, or schedule ("Add 5 instances every Friday afternoon for the weekly report").
+
+**Managed Identity:** App authenticates to Key Vault, databases, and other services WITHOUT any credentials in code. System-assigned (tied to the app) or User-assigned (reusable across apps).
+
+**Containers:**
+**ACI (Azure Container Instances):** Run containers in seconds. No VM to manage. Per-second billing. Container groups (multiple containers sharing network). Good for batch jobs and quick tasks.
+**ACR (Azure Container Registry):** Private Docker registry. Vulnerability scanning. Geo-replication for multi-region. Tasks for automated image builds.
+**AKS (Azure Kubernetes Service):** Managed Kubernetes. Control plane is FREE — you pay only for worker nodes. System + user node pools. Cluster autoscaler (add/remove nodes). HPA (Horizontal Pod Autoscaler — add/remove pods). Azure AD RBAC integration. Azure CNI networking.
+
+**Infrastructure as Code (IaC):**
+**Bicep (RECOMMENDED):** Microsoft's IaC language. Cleaner than ARM JSON. Modules for reuse. Compiles to ARM templates. Idempotent — run 10 times, same result.
+**ARM Templates:** JSON format. More verbose but full-featured. What Bicep compiles to.
+**Azure Automation:** PowerShell/Python runbooks on schedule. Auto-shutdown dev VMs at 7PM (saves $8K/month). Auto-start at 7AM. Run compliance checks. Rotate certificates.
+
+**Interview Tip:**
+"App Service deployment slots for zero-downtime releases. AKS for microservices with free control plane and cluster autoscaler. Bicep for IaC with CI/CD pipelines. Azure Automation for operational tasks and cost savings."`,
+quiz:[{q:"App Service deployment slots enable:",o:["Faster VMs","Zero-downtime deployment swap","Database replication","Auto-scaling"],a:1},{q:"AKS control plane costs:",o:["$100/month","$500/month","Free — pay for worker nodes","Per-pod"],a:2},{q:"Bicep compiles to:",o:["PowerShell","ARM JSON templates","Python","YAML"],a:1},{q:"Managed Identity eliminates:",o:["Need for VMs","Credentials in application code","DNS configuration","Load balancers"],a:1}]},
+
+{mod:"Storage",id:"az104-8",title:"Azure Storage & Data Protection",
+content:`Azure Storage is foundational — blobs, files, tables, and queues in one account.
+
+**Four Storage Services:**
+**Blob Storage:** Unstructured data — documents, images, videos, backups. Block blobs (most common), Append blobs (logs), Page blobs (VM disks).
+**Azure Files:** Cloud file shares via SMB 3.0 or NFS. Replace on-premises file servers. Mount from Windows, Linux, macOS.
+**Table Storage:** NoSQL key-value store. Billions of rows, very fast, very cheap. For IoT data, user preferences.
+**Queue Storage:** Message queuing between app components. Decouple services for reliability.
+
+**Blob Access Tiers:**
+**Hot:** Frequent access. Highest storage cost, lowest access cost.
+**Cool:** Infrequent (30+ days). ~40% cheaper storage, higher access cost.
+**Archive:** Rare access (180+ days). ~90% cheaper storage, but retrieval takes hours (rehydration).
+**Lifecycle Management:** Auto-move data between tiers by age. "After 30 days → Cool. After 180 days → Archive. After 365 days → Delete."
+
+**Access Control (in order of preference):**
+**Azure AD RBAC (BEST):** Scoped, auditable, no keys to manage. Roles: Storage Blob Data Reader/Contributor/Owner.
+**SAS Tokens:** Time-limited, permission-scoped. Good for temporary external access.
+**Storage Account Keys:** Full access to everything. Rotate regularly. Avoid in code — use Managed Identity instead.
+
+**Azure File Sync:** Extend on-premises file servers to Azure. Cloud tiering: frequently accessed files stay local, everything else in cloud. Sync across multiple branch offices.
+
+**Immutable Storage (WORM):** Write Once, Read Many. Data cannot be modified or deleted during retention period. Required by SEC Rule 17a-4, FINRA, CFTC for financial compliance.
+
+**Replication Options:**
+LRS: 3 copies in 1 datacenter. Cheapest. Protects against disk failure.
+ZRS: 3 copies across 3 Availability Zones. Protects against zone failure.
+GRS: 6 copies across 2 regions. Protects against regional disaster.
+RA-GRS: Like GRS but can READ from the secondary region. Best availability.
+
+**AzCopy:** CLI tool for bulk data transfer. Fast, resumable, supports SAS tokens.
+
+**Interview Tip:**
+"Azure AD RBAC for storage access — never share account keys. Blob lifecycle policies auto-tier to save 40-90%. Azure File Sync for hybrid file servers. Immutable storage for compliance. GRS for cross-region disaster recovery."`,
+quiz:[{q:"Recommended storage access control:",o:["Storage account keys","SAS tokens","Azure AD RBAC","Anonymous access"],a:2},{q:"Archive tier is cheapest but:",o:["Always available instantly","Retrieval takes hours (rehydration)","Cannot be accessed ever","Requires Premium account"],a:1},{q:"GRS provides how many copies:",o:["3 in one datacenter","3 across zones","6 across two regions","9 across three regions"],a:2},{q:"Immutable (WORM) storage prevents:",o:["Reading data","Modifying or deleting data during retention","Creating new blobs","Changing access tier"],a:1}]},
+
+{mod:"Monitoring & Backup",id:"az104-9",title:"Azure Monitor, Log Analytics & Alerts",
+content:`Monitoring is how you know what's happening in your environment — before users tell you something's broken.
+
+**Azure Monitor — The Foundation:**
+Collects two types of data:
+**Metrics:** Numeric time-series data — CPU %, memory usage, disk IOPS, network throughput. Stored for 93 days. Near real-time (1-minute granularity). Perfect for dashboards and quick health checks.
+**Logs:** Text-based event data — who did what, when, from where. Stored in Log Analytics workspace. Retention configurable (30 days to 2 years). Queryable with KQL.
+
+**Log Analytics & KQL:**
+Log Analytics is the central repository for all logs. Query with Kusto Query Language (KQL):
+
+Find VMs deleted this week: AzureActivity | where OperationNameValue == "MICROSOFT.COMPUTE/VIRTUALMACHINES/DELETE" | where TimeGenerated > ago(7d)
+
+Find high CPU events: Perf | where CounterName == "% Processor Time" | where CounterValue > 85 | summarize avg(CounterValue) by Computer
+
+Find failed sign-ins: SigninLogs | where ResultType != 0 | summarize count() by UserPrincipalName | order by count_ desc
+
+**Alerts:**
+**Metric Alerts:** "If CPU > 85% for 5 minutes → trigger." Near real-time.
+**Log Alerts:** "If KQL query returns results → trigger." For pattern detection.
+**Activity Log Alerts:** "If someone deletes a resource group → trigger." For governance.
+
+**Action Groups (what happens when alert fires):**
+Email, SMS, voice call, Teams webhook (post to channel), Azure Function (auto-remediation), Logic App (complex workflow), ITSM integration (create ServiceNow ticket).
+
+**Diagnostic Settings:** Enable on every resource. Route platform logs to: Log Analytics (for queries), Storage Account (for archival), Event Hub (for streaming to third-party tools).
+
+**Application Insights:**
+APM (Application Performance Monitoring) for web apps. Tracks: request rates, response times, failure rates, dependency calls (database, API), exceptions. Live Metrics Stream: real-time view during incidents. Smart Detection: AI alerts on anomalies.
+
+**Azure Service Health:** Real-time status of Azure services. Service issues, planned maintenance, health advisories specific to YOUR resources.
+
+**Workbooks:** Custom visual dashboards combining metrics, logs, and text. Share across team. Templates for common scenarios.
+
+**Interview Tip:**
+"Azure Monitor collects metrics and logs. Log Analytics with KQL for deep analysis. Three alert types: metric (real-time health), log (patterns), activity (governance). Action Groups for notification + auto-remediation. Application Insights for web app APM. Diagnostic settings on every resource."`,
+quiz:[{q:"KQL is used for:",o:["SQL database queries","Log Analytics queries","PowerShell scripting","Python coding"],a:1},{q:"Action Groups can trigger:",o:["Only email","Email, SMS, webhook, Azure Function, Logic App","Only SMS","Only alerts portal"],a:1},{q:"Application Insights monitors:",o:["Network traffic only","Web app performance (requests, failures, dependencies)","Storage costs","VM disk space"],a:1},{q:"Diagnostic Settings route logs to:",o:["Only email","Log Analytics, Storage, or Event Hub","Only Azure portal","Only CSV files"],a:1}]},
+
+{mod:"Monitoring & Backup",id:"az104-10",title:"Key Vault, Azure Backup & Site Recovery",
+content:`Protect secrets, back up data, and prepare for disasters.
+
+**Azure Key Vault:**
+Stores three types of sensitive data:
+**Secrets:** Passwords, API keys, connection strings. Apps retrieve at runtime.
+**Keys:** Encryption keys. HSM-backed for FIPS 140-2 compliance. Used for disk encryption, database TDE, custom encryption.
+**Certificates:** SSL/TLS certificates with auto-renewal from CAs like DigiCert.
+
+**Access:** Azure AD RBAC roles (Key Vault Administrator, Secrets User, Crypto Officer) or vault access policies. 
+**Managed Identity:** Apps authenticate to Key Vault WITHOUT any credentials in code — Azure handles identity automatically. This is the #1 best practice for secret access.
+**Protection:** Soft-delete (deleted secrets recoverable for 7-90 days) + Purge Protection (even admins can't permanently delete during retention). Key rotation policies automate periodic rotation.
+
+**Azure Backup:**
+Protects: VMs, Azure SQL, Azure Files, SAP HANA, PostgreSQL, Blob Storage.
+**Recovery Services Vault:** Central management point. Configure backup policies: daily frequency, 30-day/monthly/yearly retention. LRS or GRS vault.
+**Instant Restore:** Snapshots allow recovery in minutes (not hours). File-level recovery from VM backups — mount the recovery point and copy individual files.
+**Cross-Region Restore:** With GRS vault, restore in the paired region during regional outage.
+**MARS Agent:** For on-premises file/folder backup to Azure vault.
+
+**Azure Site Recovery (ASR):**
+VM-level disaster recovery. Replicates VMs to a secondary Azure region with continuous replication.
+**RPO:** Recovery Point Objective — minutes (how much data you might lose).
+**RTO:** Recovery Time Objective — minutes (how long until you're back online).
+
+**Recovery Plans:** Define failover order:
+Group 1: Databases (must come up first)
+Group 2: Application servers (depend on databases)
+Group 3: Web servers (depend on app servers)
+Add manual actions or Azure Automation scripts between groups (resize VMs, update DNS, add load balancer).
+
+**Test Failover:** Creates an isolated copy in Azure with ZERO production impact. Do this quarterly! Many organizations never test their DR — then discover it doesn't work during an actual disaster.
+
+**Interview Tip:**
+"Key Vault with Managed Identity eliminates secrets in code. Azure Backup with instant restore for minutes-level recovery. Site Recovery for VM-level DR with ordered Recovery Plans and quarterly test failovers — I always insist on regular testing because untested DR is no DR at all."`,
+quiz:[{q:"Key Vault + Managed Identity means:",o:["Passwords in code","No credentials in code — app auto-authenticates","Manual key rotation","Public key access"],a:1},{q:"Site Recovery RPO is typically:",o:["Hours","Days","Minutes","Weeks"],a:2},{q:"Test failover impacts production?",o:["Yes, causes outage","No — creates isolated test environment","Sometimes","Only during maintenance"],a:1},{q:"Recovery Plans define:",o:["Backup frequency","Ordered failover sequence (DB→App→Web)","Cost budgets","Network topology"],a:1}]}
+];
+
+
+function AZ104App() {
+  const [view, setView] = useState("home");
+  const [topicIdx, setTopicIdx] = useState(0);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [ans, setAns] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [prog, setProg] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("az104-prog")) || {}; } catch { return {}; }
+  });
+  const [intIdx, setIntIdx] = useState(0);
+  const [intShow, setIntShow] = useState(false);
+  const topRef = useRef(null);
+
+  useEffect(() => { try { localStorage.setItem("az104-prog", JSON.stringify(prog)); } catch {} }, [prog]);
+  useEffect(() => { topRef.current?.scrollIntoView({ behavior: "smooth" }); }, [topicIdx, view]);
+
+  const topic = L[topicIdx];
+  const modules = [...new Set(L.map(l => l.mod))];
+  const getModTopics = (m) => L.filter(l => l.mod === m);
+  const pct = Math.round(Object.keys(prog).filter(k => prog[k]).length / L.length * 100);
+  const c = COURSE.color;
+
+  const renderText = (text) => {
+    if (!text) return null;
+    const lines = text.split(/\\n|\n/);
+    return lines.map((line, i) => {
+      if (!line.trim()) return <div key={i} style={{ height: 12 }} />;
+      let html = line
+        .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:' + c + '">$1</strong>');
+      if (line.trim().startsWith("- ")) {
+        html = '<span style="color:' + c + ';margin-right:8px">\u25cf</span>' + line.trim().slice(2);
+      }
+      return <div key={i} style={{ marginBottom: 5, lineHeight: 1.85, fontSize: 15, color: "#dce1eb" }} dangerouslySetInnerHTML={{ __html: html }} />;
+    });
+  };
+
+  const ProgressBar = ({ p, h = 7 }) => (
+    <div style={{ width: "100%", height: h, borderRadius: h, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+      <div style={{ width: p + "%", height: "100%", borderRadius: h, background: "linear-gradient(90deg," + c + "," + c + "cc)", transition: "width 0.6s" }} />
+    </div>
+  );
+
+  const cardStyle = { background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 20, marginBottom: 12, transition: "all 0.2s" };
+  const btnStyle = { padding: "11px 22px", borderRadius: 11, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 14, transition: "all 0.15s" };
+
+  // ━━━ HOME VIEW ━━━
+  if (view === "home") {
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px 16px 60px" }}>
+          <div style={{ textAlign: "center", padding: "30px 0 20px" }}>
+            <div style={{ fontSize: 56, marginBottom: 6 }}>{COURSE.icon}</div>
+            <h1 style={{ fontSize: 28, fontWeight: 900, color: c, margin: "0 0 4px" }}>{COURSE.title}</h1>
+            <p style={{ color: "#8892a6", fontSize: 13, margin: "0 0 4px" }}>{COURSE.desc}</p>
+            <p style={{ color: "#5a6478", fontSize: 12, margin: "0 0 16px" }}>by <span style={{ color: "#FF6B35", fontWeight: 700 }}>Ram Mohan Pathak</span></p>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "center", maxWidth: 400, margin: "0 auto" }}>
+              <ProgressBar p={pct} />
+              <span style={{ fontSize: 15, fontWeight: 700, color: c }}>{pct}%</span>
+              <span style={{ fontSize: 11, color: "#5a6478" }}>{Object.keys(prog).filter(k => prog[k]).length}/{L.length}</span>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 8, margin: "0 0 20px", flexWrap: "wrap" }}>
+            {[
+              { v: L.length, l: "Lessons", ic: "\ud83d\udcd6" },
+              { v: L.reduce((a, t) => a + (t.quiz ? t.quiz.length : 0), 0), l: "Quiz Q's", ic: "\ud83d\udcdd" },
+              { v: COURSE.interview ? COURSE.interview.length : 0, l: "Interview", ic: "\ud83c\udf99\ufe0f" },
+              { v: COURSE.roles ? COURSE.roles.length : 0, l: "Roles", ic: "\ud83d\udcbc" }
+            ].map((s, i) => (
+              <div key={i} style={{ flex: "1 1 100px", ...cardStyle, textAlign: "center", padding: "12px 8px", cursor: "default" }}>
+                <div style={{ fontSize: 13 }}>{s.ic}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: c }}>{s.v}</div>
+                <div style={{ fontSize: 10, color: "#8892a6" }}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+
+          {modules.map((mod, mi) => {
+            const topics = getModTopics(mod);
+            return (
+              <div key={mi} style={{ marginBottom: 20 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: 7, background: c + "20", color: c, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13 }}>{mi + 1}</div>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: c, flex: 1 }}>{mod}</h3>
+                  <span style={{ fontSize: 11, color: "#5a6478" }}>{topics.filter(t => prog[t.id]).length}/{topics.length}</span>
+                </div>
+                {topics.map((t, ti) => {
+                  const idx = L.indexOf(t);
+                  const done = prog[t.id];
+                  return (
+                    <div key={t.id} onClick={() => { setTopicIdx(idx); setShowQuiz(false); setAns({}); setSubmitted(false); setView("topic"); }}
+                      style={{ ...cardStyle, display: "flex", alignItems: "center", gap: 10, padding: 14, cursor: "pointer", borderColor: done ? "#34d39930" : "rgba(255,255,255,0.04)" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.025)"; }}>
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: done ? "#34d39912" : "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0, color: done ? "#34d399" : "#5a6478" }}>
+                        {done ? "\u2705" : (mi + 1) + "." + (ti + 1)}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: "#e8ecf4" }}>{t.title}</div>
+                        {t.quiz && <div style={{ fontSize: 10, color: "#5a6478", marginTop: 2 }}>\ud83d\udcdd {t.quiz.length} quiz questions</div>}
+                      </div>
+                      <span style={{ fontSize: 16, color: "#5a6478" }}>\u2192</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+            {COURSE.interview && COURSE.interview.length > 0 && (
+              <div style={{ ...cardStyle, cursor: "pointer" }} onClick={() => setView("interview")}>
+                <h3 style={{ margin: "0 0 4px", fontSize: 15, color: "#a78bfa" }}>\ud83c\udf99\ufe0f Interview Prep</h3>
+                <p style={{ fontSize: 11, color: "#8892a6", margin: 0 }}>{COURSE.interview.length} Q&As with model answers</p>
+              </div>
+            )}
+            {COURSE.roles && COURSE.roles.length > 0 && (
+              <div style={{ ...cardStyle, cursor: "pointer" }} onClick={() => setView("career")}>
+                <h3 style={{ margin: "0 0 4px", fontSize: 15, color: "#34d399" }}>\ud83d\udcbc Career & Resume</h3>
+                <p style={{ fontSize: 11, color: "#8892a6", margin: 0 }}>{COURSE.roles.length} roles + resume bullets</p>
+              </div>
+            )}
+          </div>
+
+          <div style={{ textAlign: "center", padding: "20px 0", color: "#3d4556", fontSize: 10 }}>Smart Tutor Ram by Ram Mohan Pathak</div>
+        </div>
+        <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:2px}button:hover{filter:brightness(1.08)}button:active{transform:scale(.98)}`}</style>
+      </div>
+    );
+  }
+
+  // ━━━ TOPIC VIEW ━━━
+  if (view === "topic" && topic) {
+    const score = topic.quiz ? topic.quiz.filter((q, i) => ans[i] === q.a).length : 0;
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <div ref={topRef} />
+        <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(10,14,26,0.92)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 48, backdropFilter: "blur(16px)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: "#e8ecf4", cursor: "pointer", fontSize: 18 }}>\u2190</button>
+            <span style={{ fontWeight: 800, fontSize: 13, color: c }}>{COURSE.title.split(":")[0]}</span>
+          </div>
+          <span style={{ fontSize: 11, color: "#5a6478" }}>{topicIdx + 1}/{L.length}</span>
+        </nav>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "16px 14px 60px" }}>
+          <div style={{ display: "inline-block", padding: "4px 12px", borderRadius: 16, fontSize: 11, fontWeight: 600, background: c + "18", color: c, marginBottom: 6 }}>{topic.mod}</div>
+          <h2 style={{ margin: "6px 0 14px", fontSize: 22, fontWeight: 800, color: "#e8ecf4" }}>{topic.title}</h2>
+
+          {topic.quiz && topic.quiz.length > 0 && (
+            <div style={{ display: "flex", gap: 3, marginBottom: 16, background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: 3 }}>
+              <button onClick={() => setShowQuiz(false)} style={{ ...btnStyle, flex: 1, background: !showQuiz ? c : "transparent", color: !showQuiz ? "#fff" : "#8892a6" }}>\ud83d\udcd6 Lesson</button>
+              <button onClick={() => { setShowQuiz(true); setAns({}); setSubmitted(false); }} style={{ ...btnStyle, flex: 1, background: showQuiz ? c : "transparent", color: showQuiz ? "#fff" : "#8892a6" }}>\ud83d\udcdd Quiz ({topic.quiz.length})</button>
+            </div>
+          )}
+
+          {!showQuiz ? (
+            <div style={{ ...cardStyle, cursor: "default", padding: 28, lineHeight: 1.85 }}>
+              {renderText(topic.content)}
+              <div style={{ marginTop: 24, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {!prog[topic.id] ? (
+                  <button onClick={() => setProg(p => ({ ...p, [topic.id]: true }))} style={{ ...btnStyle, background: "#34d399", color: "#000" }}>\u2705 Mark Complete</button>
+                ) : (
+                  <span style={{ display: "inline-block", padding: "8px 16px", borderRadius: 16, fontSize: 12, fontWeight: 600, background: "#34d39918", color: "#34d399" }}>\u2705 Completed</span>
+                )}
+                {topicIdx < L.length - 1 && (
+                  <button onClick={() => { setTopicIdx(topicIdx + 1); setShowQuiz(false); setAns({}); setSubmitted(false); }} style={{ ...btnStyle, background: c + "20", color: c }}>Next \u2192</button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div>
+              {topic.quiz.map((q, qi) => {
+                const sel = ans[qi];
+                const isRight = submitted && sel === q.a;
+                const isWrong = submitted && sel !== undefined && sel !== q.a;
+                return (
+                  <div key={qi} style={{ ...cardStyle, cursor: "default", borderColor: isRight ? "#34d39930" : isWrong ? "#f8717130" : "rgba(255,255,255,0.04)" }}>
+                    <p style={{ margin: "0 0 12px", fontWeight: 700, fontSize: 14, color: "#e8ecf4" }}>Q{qi + 1}: {q.q}</p>
+                    {q.o.map((opt, oi) => {
+                      const isSel = sel === oi;
+                      const green = submitted && oi === q.a;
+                      const red = submitted && isSel && oi !== q.a;
+                      return (
+                        <button key={oi} onClick={() => !submitted && setAns(p => ({ ...p, [qi]: oi }))}
+                          style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 16px", marginBottom: 6, borderRadius: 10,
+                            border: "1px solid " + (green ? "#34d39930" : red ? "#f8717130" : isSel ? c + "30" : "transparent"),
+                            background: green ? "#34d39912" : red ? "#f8717112" : isSel ? c + "12" : "rgba(255,255,255,0.02)",
+                            color: green ? "#34d399" : red ? "#f87171" : isSel ? c : "#e8ecf4",
+                            cursor: submitted ? "default" : "pointer", fontWeight: 500, fontSize: 13 }}>
+                          {String.fromCharCode(65 + oi)}. {opt}{green ? " \u2705" : ""}{red ? " \u274c" : ""}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+              {!submitted ? (
+                <button onClick={() => setSubmitted(true)} disabled={Object.keys(ans).length !== topic.quiz.length}
+                  style={{ ...btnStyle, width: "100%", padding: 13, fontSize: 15, background: c, color: "#fff", opacity: Object.keys(ans).length === topic.quiz.length ? 1 : 0.4 }}>Submit Answers</button>
+              ) : (
+                <div style={{ ...cardStyle, cursor: "default", textAlign: "center" }}>
+                  <div style={{ fontSize: 36 }}>{score === topic.quiz.length ? "\ud83c\udf89" : "\ud83d\udcda"}</div>
+                  <h3 style={{ margin: "6px 0", color: "#e8ecf4" }}>Score: {score}/{topic.quiz.length}</h3>
+                  <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 10 }}>
+                    <button onClick={() => { setAns({}); setSubmitted(false); }} style={{ ...btnStyle, background: c + "20", color: c }}>Retry</button>
+                    {topicIdx < L.length - 1 && <button onClick={() => { setTopicIdx(topicIdx + 1); setShowQuiz(false); setAns({}); setSubmitted(false); }} style={{ ...btnStyle, background: c, color: "#fff" }}>Next \u2192</button>}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:2px}button:hover{filter:brightness(1.08)}button:active{transform:scale(.98)}`}</style>
+      </div>
+    );
+  }
+
+  // ━━━ INTERVIEW VIEW ━━━
+  if (view === "interview" && COURSE.interview) {
+    const q = COURSE.interview[intIdx];
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(10,14,26,0.92)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 48, backdropFilter: "blur(16px)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: "#e8ecf4", cursor: "pointer", fontSize: 18 }}>\u2190</button>
+            <span style={{ fontWeight: 800, fontSize: 13, color: "#a78bfa" }}>\ud83c\udf99\ufe0f Interview Prep</span>
+          </div>
+          <span style={{ fontSize: 11, color: "#5a6478" }}>{intIdx + 1}/{COURSE.interview.length}</span>
+        </nav>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "16px 14px 60px" }}>
+          <ProgressBar p={(intIdx + 1) / COURSE.interview.length * 100} h={4} />
+          <div style={{ ...cardStyle, marginTop: 14, cursor: "default" }}>
+            <p style={{ fontSize: 10, color: "#5a6478", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 6px" }}>Interviewer asks:</p>
+            <h3 style={{ margin: 0, fontSize: 18, lineHeight: 1.5, color: "#e8ecf4" }}>"{q.q}"</h3>
+          </div>
+          {!intShow ? (
+            <button onClick={() => setIntShow(true)} style={{ ...btnStyle, width: "100%", padding: 13, fontSize: 15, background: "linear-gradient(135deg, #7c3aed, #ec4899)", color: "#fff", marginTop: 8 }}>\ud83d\udca1 Reveal Model Answer</button>
+          ) : (
+            <div style={{ ...cardStyle, marginTop: 8, cursor: "default", borderColor: "#7c3aed25" }}>
+              <p style={{ fontSize: 10, color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 8px" }}>Model Answer:</p>
+              {renderText(q.a)}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
+            <button onClick={() => { setIntIdx(i => i - 1); setIntShow(false); }} disabled={intIdx === 0} style={{ ...btnStyle, flex: 1, background: "rgba(255,255,255,0.04)", color: "#e8ecf4", opacity: intIdx === 0 ? 0.3 : 1 }}>\u2190 Prev</button>
+            <button onClick={() => { setIntIdx(i => i + 1); setIntShow(false); }} disabled={intIdx === COURSE.interview.length - 1} style={{ ...btnStyle, flex: 1, background: c, color: "#fff", opacity: intIdx === COURSE.interview.length - 1 ? 0.3 : 1 }}>Next \u2192</button>
+          </div>
+        </div>
+        <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:2px}button:hover{filter:brightness(1.08)}button:active{transform:scale(.98)}`}</style>
+      </div>
+    );
+  }
+
+  // ━━━ CAREER VIEW ━━━
+  if (view === "career") {
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#0a0e1a", color: "#e8ecf4" }}>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(10,14,26,0.92)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "0 16px", display: "flex", alignItems: "center", height: 48, gap: 8, backdropFilter: "blur(16px)" }}>
+          <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: "#e8ecf4", cursor: "pointer", fontSize: 18 }}>\u2190</button>
+          <span style={{ fontWeight: 800, fontSize: 13, color: "#34d399" }}>\ud83d\udcbc Career Guide</span>
+        </nav>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "16px 14px 60px" }}>
+          {COURSE.roles && (
+            <div style={{ ...cardStyle, cursor: "default" }}>
+              <h3 style={{ margin: "0 0 12px", fontSize: 17, color: "#34d399" }}>\ud83d\udcbc Roles After This Certification</h3>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {COURSE.roles.map((r, i) => <span key={i} style={{ display: "inline-block", padding: "6px 14px", borderRadius: 18, fontSize: 12, fontWeight: 600, background: "#34d39912", color: "#34d399" }}>{r}</span>)}
+              </div>
+            </div>
+          )}
+          {COURSE.resume && (
+            <div style={{ ...cardStyle, cursor: "default" }}>
+              <h3 style={{ margin: "0 0 12px", fontSize: 17, color: c }}>\ud83d\udcc4 Resume Bullet Points</h3>
+              {COURSE.resume.map((b, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                  <span style={{ color: c, fontSize: 14, marginTop: 3, flexShrink: 0 }}>\u25cf</span>
+                  <p style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: "#e8ecf4" }}>{b}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <style>{`*{box-sizing:border-box;margin:0}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:2px}button:hover{filter:brightness(1.08)}button:active{transform:scale(.98)}`}</style>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(AZ104App));
+</script>
+</body>
+</html>
